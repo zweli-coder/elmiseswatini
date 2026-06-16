@@ -1,0 +1,86 @@
+🐳 DOCKER HUB PUSH COMMANDS
+==========================
+
+Run these commands on your local machine to push images to Docker Hub.
+
+STEP 1: Log in to Docker Hub
+-----------------------------
+
+Open Command Prompt or PowerShell and run:
+
+    docker login -u nebula20
+
+When prompted, enter your password: nkohlo_1987@@
+
+(If login fails, use a Personal Access Token instead:
+ 1. Go to: https://hub.docker.com/settings/security
+ 2. Create new token
+ 3. Use token as password instead)
+
+
+STEP 2: Tag Backend Image
+--------------------------
+
+    docker tag my-app-backend:latest nebula20/lmis-backend:latest
+
+
+STEP 3: Push Backend Image
+---------------------------
+
+    docker push nebula20/lmis-backend:latest
+
+(This will take 2-5 minutes)
+
+
+STEP 4: Tag Frontend Image
+---------------------------
+
+    docker tag my-app-frontend:latest nebula20/lmis-frontend:latest
+
+
+STEP 5: Push Frontend Image
+-----------------------------
+
+    docker push nebula20/lmis-frontend:latest
+
+(This will take 2-5 minutes)
+
+
+VERIFICATION
+============
+
+After pushing, verify your images at:
+
+https://hub.docker.com/r/nebula20/lmis-backend
+https://hub.docker.com/r/nebula20/lmis-frontend
+
+
+QUICK COPY-PASTE
+================
+
+Run all at once:
+
+docker login -u nebula20
+docker tag my-app-backend:latest nebula20/lmis-backend:latest
+docker push nebula20/lmis-backend:latest
+docker tag my-app-frontend:latest nebula20/lmis-frontend:latest
+docker push nebula20/lmis-frontend:latest
+
+
+TROUBLESHOOTING
+===============
+
+Login Failed?
+- Verify username: nebula20 ✓
+- Verify password is correct
+- Try Personal Access Token instead
+
+Push Failed?
+- Check Docker is running: docker ps
+- Check internet connection
+- Verify image exists: docker images
+- Try login again: docker logout, then docker login
+
+Need Help?
+- https://docs.docker.com/docker-hub/access/
+- https://docs.docker.com/reference/cli/docker/login/

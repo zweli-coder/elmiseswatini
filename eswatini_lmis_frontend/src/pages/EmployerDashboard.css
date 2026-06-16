@@ -1,0 +1,232 @@
+/* ========================================
+   EMPLOYER DASHBOARD - PROFESSIONAL STYLING
+   ======================================== */
+
+/* Import professional font stack */
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700;800;900&display=swap');
+
+/* ========== ROOT VARIABLES ========== */
+:root {
+  --primary-dark: #0a1930;
+  --primary-blue: #0369a1;
+  --accent-light: #a5d8ff;
+  --bg-light: #f8f9fb;
+  --bg-white: #ffffff;
+  --border-color: #e5e9f0;
+  --text-primary: #0a1930;
+  --text-secondary: #667085;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 24px rgba(30, 58, 137, 0.12);
+  --shadow-lg: 0 20px 40px rgba(30, 58, 137, 0.18);
+  --transition-base: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ========== GLOBAL STYLES ========== */
+body, html {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== SCROLLBAR STYLING ========== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ========== FOCUS STYLES ========== */
+*:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ========== UTILITY ANIMATIONS ========== */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(3, 105, 161, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(3, 105, 161, 0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== RESPONSIVE BREAKPOINTS ========== */
+@media (max-width: 1440px) {
+  :root {
+    --header-padding: 48px 60px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --header-padding: 40px 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-padding: 32px 24px;
+  }
+  
+  .employer-dashboard-card:hover {
+    transform: translateY(-6px) scale(1.008) !important;
+  }
+  
+  .dashboard-vacancy-card:hover {
+    transform: translateY(-6px) scale(1.006) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --header-padding: 24px 16px;
+  }
+}
+
+/* ========== PROFESSIONAL CARD EFFECTS ========== */
+.professional-card-base {
+  transition: var(--transition-base);
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.professional-card-base::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+.professional-card-base:hover::after {
+  opacity: 1;
+}
+
+/* ========== SMOOTH TRANSITIONS ========== */
+.transition-smooth {
+  transition: var(--transition-base);
+}
+
+/* ========== ACCESSIBILITY IMPROVEMENTS ========== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ========== LOADING STATE ========== */
+@keyframes shimmerLoading {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-state {
+  background: linear-gradient(
+    90deg,
+    var(--bg-light) 25%,
+    var(--bg-white) 50%,
+    var(--bg-light) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmerLoading 2s infinite;
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* ========== PERFORMANCE OPTIMIZATION ========== */
+* {
+  will-change: auto;
+}
+
+.employer-dashboard-card:hover,
+.dashboard-vacancy-card:hover {
+  will-change: transform, box-shadow;
+}
+
+button:hover,
+a:hover {
+  will-change: transform;
+}

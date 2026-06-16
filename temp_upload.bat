@@ -1,0 +1,1 @@
+curl -s -X POST -H  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDEsInJvbGUiOjEsImlhdCI6MTc4MDY0NDk5MiwiZXhwIjoxNzgwNzMxMzkyfQ.4BGp3HkwgobbAJV7kgqeEA0veAeDTQSb8acsq2Mpaao -F title=Test Upload -F description=Test CSV Upload -F category=Statistics -F year=2015 -F file=@sample_stats.csv http://localhost:3001/api/admin/statistics-file
