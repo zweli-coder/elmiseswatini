@@ -1,0 +1,46 @@
+# Quick Render Backend Deployment
+
+## What You Need:
+1. GitHub repo (✓ already pushed)
+2. Render account (create at render.com if you don't have one)
+3. Render PostgreSQL URL: `dpg-d8fb0ca8qa3s738qh880-a.oregon-postgres.render.com`
+4. Render Database Password (the one that was redacted in your connection string)
+5. Your GitHub username: `zweli-coder`
+
+## Fast Track (3 Steps):
+
+### 1. Deploy Backend
+- Go to https://dashboard.render.com
+- Click **New +** → **Web Service**
+- Choose repo: `elmiseswatini`
+- Environment: **Docker**
+- Dockerfile path: `eswatini_lmis_backend/Dockerfile`
+- Click **Advanced** → Add environment variables below
+- Click **Create Web Service**
+
+### 2. Set Environment Variables
+Copy and paste in Render:
+```
+DB_HOST=dpg-d8fb0ca8qa3s738qh880-a.oregon-postgres.render.com
+DB_USER=eswatini_lmis_user
+DB_NAME=eswatini_lmis
+DB_PORT=5432
+DB_PASSWORD=[PASTE_YOUR_ACTUAL_PASSWORD_HERE]
+JWT_SECRET=eswatini_lmis_jwt_secret_2026_secure_key
+NODE_ENV=production
+PORT=3001
+```
+
+### 3. After Deployment (5-10 min)
+You'll get a URL like: `https://lmis-backend-xxxxx.onrender.com`
+
+Update frontend on Render:
+- Environment variable: `REACT_APP_API_URL=https://lmis-backend-xxxxx.onrender.com/api`
+- Redeploy frontend
+
+## Then Test:
+Visit https://elmis-eswatini-qzwo.onrender.com and log in
+
+---
+
+**Need the DB password to proceed? Check your Render PostgreSQL dashboard or connection string.**
