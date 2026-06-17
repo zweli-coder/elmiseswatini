@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: lmis-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    repo: https://github.com/YOUR_USERNAME/my-app.git
+    dockerfilePath: ./eswatini_lmis_backend/Dockerfile
+    branch: main
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: DB_HOST
+        value: dpg-d8fb0ca8qa3s738qh880-a.oregon-postgres.render.com
+      - key: DB_USER
+        value: eswatini_lmis_user
+      - key: DB_NAME
+        value: eswatini_lmis
+      - key: DB_PORT
+        value: 5432
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
