@@ -1,4 +1,14 @@
 {
+  "name": "lmis-eswatini",
+  "version": "1.0.0",
+  "description": "Labor Market Information System for Eswatini",
+  "main": "server.js",
+  "scripts": {
+    "start": "cd eswatini_lmis_backend && npm start",
+    "dev": "cd eswatini_lmis_backend && npm start",
+    "backend": "cd eswatini_lmis_backend && npm start",
+    "frontend": "cd eswatini_lmis_frontend && npm start"
+  },
   "dependencies": {
     "axios": "^1.17.0",
     "react-scripts": "^5.0.1"
