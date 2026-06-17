@@ -7,7 +7,7 @@ const { test, expect } = require('@playwright/test');
 
 // Test configuration
 const FRONTEND_URL = 'http://localhost:3000';
-const API_BASE = 'http://192.168.100.169:3001/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 test.describe('Employer Dashboard', () => {
   

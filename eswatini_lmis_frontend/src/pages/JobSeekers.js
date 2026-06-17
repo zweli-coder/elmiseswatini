@@ -73,7 +73,7 @@ const JobSeekers = () => {
     profile_picture: null
   });
 
- const API_BASE = 'http://192.168.100.169:3001/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
   const MAX_PROFILE_PIC_SIZE = 5 * 1024 * 1024;
 
   useEffect(() => {

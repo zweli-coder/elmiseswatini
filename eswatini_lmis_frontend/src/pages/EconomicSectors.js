@@ -143,7 +143,7 @@ const EconomicSectors = () => {
         try {
           res = await fetch('/api/economic-sectors');
         } catch {
-          res = await fetch('http://localhost:3001/api/economic-sectors');
+          res = await fetch('https://elmiseswatini-backend.onrender.com/api/economic-sectors');
         }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();

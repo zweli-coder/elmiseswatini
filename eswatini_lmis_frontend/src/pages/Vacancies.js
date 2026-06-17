@@ -116,7 +116,7 @@ export default function Vacancies() {
         try {
           res = await fetch("/api/jobs");
         } catch {
-          res = await fetch("http://localhost:3001/api/jobs");
+          res = await fetch("https://elmiseswatini-backend.onrender.com/api/jobs");
         }
 
         if (res.ok) {

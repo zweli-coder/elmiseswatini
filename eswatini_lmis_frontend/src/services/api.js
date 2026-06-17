@@ -14,7 +14,7 @@ const getAPIBaseURL = () => {
     return process.env.REACT_APP_API_BASE;
   }
 
-  const defaultURL = 'http://192.168.100.169:3001/api';
+  const defaultURL = 'https://elmiseswatini-backend.onrender.com/api';
   console.log('Using fallback API URL:', defaultURL);
   return defaultURL;
 };

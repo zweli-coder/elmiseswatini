@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSpinner, FaTimes, FaUserAlt, FaBriefcase, FaEnvelope, FaCheckCircle, FaExclamationCircle, FaBan, FaChevronLeft } from 'react-icons/fa';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 // Decode JWT payload without a library
 const decodeToken = (token) => {

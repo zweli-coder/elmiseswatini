@@ -11,7 +11,7 @@ const EducationTrainingAdmin = () => {
 
     const [editingId, setEditingId] = useState(null);
 
-    const API = 'http://localhost:3001/api/education-training';
+    const API = 'https://elmiseswatini-backend.onrender.com/api/education-training';
 
     // FETCH DATA
     const fetchData = () => {

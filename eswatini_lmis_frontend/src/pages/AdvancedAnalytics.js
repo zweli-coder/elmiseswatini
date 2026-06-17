@@ -24,7 +24,7 @@ ChartJS.register(
   Filler
 );
 
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 // Professional color palettes
 const INDUSTRY_COLORS = {

@@ -66,7 +66,7 @@ const Home = () => {
         try {
           response = await fetch('/api/statistics/summary');
         } catch (err) {
-          response = await fetch('http://localhost:3001/api/statistics/summary');
+          response = await fetch('https://elmiseswatini-backend.onrender.com/api/statistics/summary');
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
@@ -109,7 +109,7 @@ useEffect(() => {
       try {
         res = await fetch('/api/employees');
       } catch (err) {
-        res = await fetch('http://localhost:3001/api/employees');
+        res = await fetch('https://elmiseswatini-backend.onrender.com/api/employees');
       }
       if (!res.ok) throw new Error('Failed to fetch employees');
       const data = await res.json();

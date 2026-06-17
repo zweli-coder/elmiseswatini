@@ -621,7 +621,7 @@ const SectorDetail = () => {
         try {
           res = await fetch(`/api/economic-sectors/${sectorId}`);
         } catch {
-          res = await fetch(`http://localhost:3001/api/economic-sectors/${sectorId}`);
+          res = await fetch(`https://elmiseswatini-backend.onrender.com/api/economic-sectors/${sectorId}`);
         }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
@@ -645,7 +645,7 @@ const SectorDetail = () => {
         try {
           res = await fetch('/api/statistics/raw');
         } catch {
-          res = await fetch('http://localhost:3001/api/statistics/raw');
+          res = await fetch('https://elmiseswatini-backend.onrender.com/api/statistics/raw');
         }
 
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

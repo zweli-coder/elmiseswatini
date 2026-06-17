@@ -20,7 +20,7 @@ import {
   FaEdit
 } from 'react-icons/fa';
 
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 export const ESWATINI_REGIONS = ['Hhohho', 'Manzini', 'Shiselweni', 'Lubombo'];
 
 const authHeader = () => {
