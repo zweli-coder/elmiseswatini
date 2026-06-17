@@ -1,0 +1,23 @@
+{
+  "name": "eswatini_1mis_backend",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "LMIS Backend System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@remix-run/router": "^1.23.3",
+    "bcryptjs": "^2.4.3",
+    "chart.js": "^4.5.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "pg": "^8.21.0",
+    "xlsx": "^0.18.5"
+  }
+}
