@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from 'react-router-dom';
+import { API_ENDPOINT } from '../services/api';
 import statisticsHero from '../assets/stats.png';
 import { 
   FaSearch, FaTable, FaChartBar, FaDatabase, FaChevronDown, FaCalendarAlt,
@@ -216,7 +217,7 @@ export default function Statistics() {
   // ============================================================
   useEffect(() => {
     let mounted = true;
-    fetch('/api/statistics/raw')
+    fetch(`${API_ENDPOINT}/statistics/raw`)
       .then(res => res.json())
       .then(data => {
         if (mounted) {
@@ -298,7 +299,7 @@ export default function Statistics() {
   // ============================================================
   useEffect(() => {
     let mounted = true;
-    fetch('/api/statistics/charts')
+    fetch(`${API_ENDPOINT}/statistics/charts`)
       .then(res => res.json())
       .then(data => { if (mounted) setApiStats(data); })
       .catch(err => console.warn('Failed to load statistics', err));

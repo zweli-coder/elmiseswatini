@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from "react";
 import heroImage from "../assets/vacanyy.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
+import { API_ENDPOINT } from "../services/api";
 import API from "../services/api";
 import {
   FaSearch,
@@ -114,9 +115,9 @@ export default function Vacancies() {
         let res;
 
         try {
-          res = await fetch("/api/jobs");
+          res = await fetch(`${API_ENDPOINT}/jobs`);
         } catch {
-          res = await fetch("https://elmiseswatini-backend.onrender.com/api/jobs");
+          res = await fetch(`${API_ENDPOINT}/jobs`);
         }
 
         if (res.ok) {

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_ENDPOINT } from '../services/api';
 import { FaBook, FaCheckCircle, FaExclamationCircle, FaChevronLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -44,7 +45,7 @@ const AdminPublications = () => {
 
     try {
       const token = localStorage.getItem('lmis_token');
-      const response = await fetch("/api/publications", {
+      const response = await fetch(`${API_ENDPOINT}/publications`, {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`

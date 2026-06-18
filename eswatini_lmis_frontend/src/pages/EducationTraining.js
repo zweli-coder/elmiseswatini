@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_ENDPOINT } from '../services/api';
 import heroImage from '../assets/education.jpg';
 import PageLoader from '../components/common/PageLoader';
 import { FaSearch, FaFilter, FaExternalLinkAlt } from 'react-icons/fa';
@@ -41,7 +42,7 @@ const EducationTraining = () => {
                 setLoading(true);
                 
                 // Fetch all programs
-                const res = await fetch('/api/education-training', { signal });
+                const res = await fetch(`${API_ENDPOINT}/education-training`, { signal });
                 if (!res.ok) {
                     const text = await res.text();
                     throw new Error(text || `Request failed (${res.status})`);

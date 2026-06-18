@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_ENDPOINT } from '../services/api';
 import heroImage from '../assets/advice.jpg';
 import {
   FaBriefcase,
@@ -64,7 +65,7 @@ const CareerAdvice = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/career-advice');
+        const res = await fetch(`${API_ENDPOINT}/career-advice`);
         const data = await res.json();
         setContent(Array.isArray(data) ? data : []);
       } catch (err) {

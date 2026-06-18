@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINT } from '../services/api';
 import PageLoader from '../components/common/PageLoader';
 import agricultureImg from '../assets/agriculture.jpg';
 import miningImg from '../assets/mining.jpg';
@@ -141,9 +142,9 @@ const EconomicSectors = () => {
       try {
         let res;
         try {
-          res = await fetch('/api/economic-sectors');
+          res = await fetch(`${API_ENDPOINT}/economic-sectors`);
         } catch {
-          res = await fetch('https://elmiseswatini-backend.onrender.com/api/economic-sectors');
+          res = await fetch(`${API_ENDPOINT}/economic-sectors`);
         }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINT } from '../services/api';
 import slide1 from '../assets/hero.jpg';
 import slide2 from '../assets/Sibebe.png';
 import slide3 from '../assets/plane.png';
@@ -64,9 +65,9 @@ const Home = () => {
       try {
         let response;
         try {
-          response = await fetch('/api/statistics/summary');
+          response = await fetch(`${API_ENDPOINT}/statistics/summary`);
         } catch (err) {
-          response = await fetch('https://elmiseswatini-backend.onrender.com/api/statistics/summary');
+          response = await fetch(`${API_ENDPOINT}/statistics/summary`);
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
@@ -107,9 +108,9 @@ useEffect(() => {
     try {
       let res;
       try {
-        res = await fetch('/api/employees');
+          res = await fetch(`${API_ENDPOINT}/employees`);
       } catch (err) {
-        res = await fetch('https://elmiseswatini-backend.onrender.com/api/employees');
+        res = await fetch(`${API_ENDPOINT}/employees`);
       }
       if (!res.ok) throw new Error('Failed to fetch employees');
       const data = await res.json();
@@ -141,12 +142,12 @@ useEffect(() => {
 
     try {
       const [jobsRes, publicationsRes, seekersRes, adviceRes, sectorsRes, trainingRes] = await Promise.all([
-        fetch('/api/jobs').catch(() => ({ ok: false, json: async () => [] })),
-        fetch('/api/publications').catch(() => ({ ok: false, json: async () => [] })),
-        fetch('/api/employees').catch(() => ({ ok: false, json: async () => [] })),
-        fetch('/api/career-advice').catch(() => ({ ok: false, json: async () => [] })),
-        fetch('/api/economic-sectors').catch(() => ({ ok: false, json: async () => [] })),
-        fetch('/api/education-training').catch(() => ({ ok: false, json: async () => [] }))
+        fetch(`${API_ENDPOINT}/jobs`).catch(() => ({ ok: false, json: async () => [] })),
+        fetch(`${API_ENDPOINT}/publications`).catch(() => ({ ok: false, json: async () => [] })),
+        fetch(`${API_ENDPOINT}/employees`).catch(() => ({ ok: false, json: async () => [] })),
+        fetch(`${API_ENDPOINT}/career-advice`).catch(() => ({ ok: false, json: async () => [] })),
+        fetch(`${API_ENDPOINT}/economic-sectors`).catch(() => ({ ok: false, json: async () => [] })),
+        fetch(`${API_ENDPOINT}/education-training`).catch(() => ({ ok: false, json: async () => [] }))
       ]);
 
       const jobs = jobsRes.ok ? await jobsRes.json() : [];

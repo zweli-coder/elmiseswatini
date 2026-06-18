@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINT } from '../services/api';
 import heroImage from "../assets/publications.jpg";
 import {
   FaFilePdf,
@@ -176,7 +177,7 @@ const Publication = () => {
   useEffect(() => {
     const loadPublications = async () => {
       try {
-        const response = await fetch('/api/publications');
+        const response = await fetch(`${API_ENDPOINT}/publications`);
         if (!response.ok) {
           throw new Error('Unable to fetch publications');
         }

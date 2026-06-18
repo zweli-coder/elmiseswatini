@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_ENDPOINT } from '../services/api';
 import PageLoader from '../components/common/PageLoader';
 
 const getSectorImage = (name) => {
@@ -619,9 +620,9 @@ const SectorDetail = () => {
       try {
         let res;
         try {
-          res = await fetch(`/api/economic-sectors/${sectorId}`);
+          res = await fetch(`${API_ENDPOINT}/economic-sectors/${sectorId}`);
         } catch {
-          res = await fetch(`https://elmiseswatini-backend.onrender.com/api/economic-sectors/${sectorId}`);
+          res = await fetch(`${API_ENDPOINT}/economic-sectors/${sectorId}`);
         }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
@@ -643,9 +644,9 @@ const SectorDetail = () => {
       try {
         let res;
         try {
-          res = await fetch('/api/statistics/raw');
+          res = await fetch(`${API_ENDPOINT}/statistics/raw`);
         } catch {
-          res = await fetch('https://elmiseswatini-backend.onrender.com/api/statistics/raw');
+          res = await fetch(`${API_ENDPOINT}/statistics/raw`);
         }
 
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
