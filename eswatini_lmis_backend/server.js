@@ -48,7 +48,8 @@ app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'http://192.168.100.169:3000' // Allow all origins for network access (configure more restrictively in production)
+        'http://192.168.100.169:3000', // Allow all origins for network access (configure more restrictively in production)
+        'https://elmis-eswatini-qzwo.onrender.com'
     ],
     credentials: true
 }));
