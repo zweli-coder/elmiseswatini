@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { API_ENDPOINT } from '../services/api';
 import heroImage from "../assets/publications.jpg";
 import {
@@ -6,13 +6,44 @@ import {
   FaCaretDown,
   FaEye,
   FaTimes as FaClose,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaTrash,
+  FaSpinner,
+  FaExclamationCircle,
+  FaCheckCircle
 } from 'react-icons/fa';
 import PageLoader from '../components/common/PageLoader';
 
+// ---------------------------------------------------------------------------
+// Custom hook: closes the menu when a click occurs outside the given ref(s)
+// ---------------------------------------------------------------------------
+function useClickOutside(refs, handler) {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+  const refsKey = refs.map(r => r.current).join(',');
+
+  useEffect(() => {
+    function onMouseDown(e) {
+      if (!refs.some(r => r.current && r.current.contains(e.target))) {
+        handlerRef.current(e);
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refsKey]);
+}
+
+// ---------------------------------------------------------------------------
 const Publication = () => {
 
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [viewingPublication, setViewingPublication] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,19 +51,53 @@ const Publication = () => {
   const [isAreaOpen, setIsAreaOpen] = useState(false);
   const [isTopicOpen, setIsTopicOpen] = useState(false);
   const [isTypeOpen, setIsTypeOpen] = useState(false);
-  const [isYearOpen, setIsYearOpen] = useState(false);
 
   const [filters, setFilters] = useState({
-  area: null,
-  topic: null,
-  type: null,
-  year: null,
-  date: ""
-});
+    area: null,
+    topic: null,
+    type: null,
+    date: ""
+  });
+
+  // -- Refs for click-outside -----------------------------------------------
+  const areaRef = useRef(null);
+  const topicRef = useRef(null);
+  const typeRef = useRef(null);
+
+  useClickOutside(
+    [areaRef],
+    useCallback(() => setIsAreaOpen(false), [])
+  );
+  useClickOutside(
+    [topicRef],
+    useCallback(() => setIsTopicOpen(false), [])
+  );
+  useClickOutside(
+    [typeRef],
+    useCallback(() => setIsTypeOpen(false), [])
+  );
+
+  // Decode JWT payload without a library
+  const decodeToken = (token) => {
+    try {
+      const raw = token.startsWith('Bearer ') ? token.slice(7) : token;
+      const base64 = raw.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(base64));
+    } catch {
+      return null;
+    }
+  };
+
+  // Always send token as "Bearer <token>", stripping any existing prefix
+  const authHeader = (token) => {
+    if (!token) return {};
+    const raw = token.startsWith('Bearer ') ? token.slice(7) : token;
+    return { Authorization: `Bearer ${raw}` };
+  };
+
+  const [deleteMessage, setDeleteMessage] = useState(null);
 
   const publicationTypes = ['Laws', 'Policies', 'Reports', 'Questionnaires'];
-
-  // Use theme gradients for a unified look; keep type list for filters
 
   const normalizePublicationType = (value, category) => {
     if (value) {
@@ -52,12 +117,27 @@ const Publication = () => {
 
   const getPublicationTypeColor = (doc) => {
     const type = doc.type;
-    if (type === 'Laws') return 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)';
-    if (type === 'Policies') return 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
-    if (type === 'Questionnaires') return 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
-    // Default / Reports
-    return 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+    if (type === 'Laws') return 'linear-gradient(135deg, #1e3a5f, #2d5986)';
+    if (type === 'Policies') return 'linear-gradient(135deg, #1b4332, #2d6a4f)';
+    if (type === 'Questionnaires') return 'linear-gradient(135deg, #7c3a1e, #b4532e)';
+    return 'linear-gradient(135deg, #3b1f3b, #5b2d5b)';
   };
+
+  // Check admin status on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('lmis_token');
+    if (token) {
+      const payload = decodeToken(token);
+      if (payload && payload.role_id === 1) {
+        setUser(payload);
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    } else {
+      setIsAdmin(false);
+    }
+  }, []);
 
   const [count, setCount] = useState({
     publications: 0,
@@ -67,112 +147,8 @@ const Publication = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [publications, setPublications] = useState([
-    {
-      id: 1,
-      title: "Labour Force Survey Report 2023",
-      description: "Annual report on employment, unemployment and labour utilisation in Eswatini.",
-      category: "Labour Force Survey",
-      file_url: "/pdfs/labour-force-survey-report-2023.pdf",
-      year: "2023",
-      type: "Reports",
-      size: "2.4 MB",
-      area: "Labour force",
-      topic: "Labour Force 2023 report",
-      color: "#fde047"
-    },
-
-    {
-      id: 2,
-      title: "Wage Statistics Bulletin 2023",
-      description: "Statistics on average wages across industries and sectors in Eswatini.",
-      category: "Wage Statistics",
-      file_url: "/pdfs/wage-statistics-bulletin-2023.pdf",
-      year: "2023",
-      type: "Reports",
-      id: 3,
-      title: "Employment Bulletin Q3 2023",
-      description: "Quarterly bulletin covering employment trends in the third quarter of 2023.",
-      category: "Employment Bulletin",
-      file_url: "/pdfs/employment-bulletin-q3-2023.pdf",
-      year: "2023",
-      type: "Reports",
-      size: "2.0 MB",
-      area: "Labour demand",
-      topic: "Labour market institutions",
-      color: "#86efac"
-    },
-
-    {
-      id: 4,
-      title: "Labour Market Information Report 2022",
-      description: "Comprehensive annual labour market report covering all key indicators.",
-      category: "Annual Report",
-      file_url: "/pdfs/labour-market-information-report-2022.pdf",
-      year: "2022",
-      type: "Reports",
-      size: "3.5 MB",
-      area: "Labour force",
-      topic: "International labour organisations",
-      color: "#fca5a5"
-    },
-
-    {
-      id: 5,
-      title: "Occupational Outlook Handbook 2022",
-      description: "Guide to occupational employment projections and career information.",
-      category: "Occupational Guide",
-      file_url: "/pdfs/occupational-outlook-handbook-2022.pdf",
-      year: "2022",
-      type: "Reports",
-      size: "2.9 MB",
-      area: "Skills",
-      topic: "Training institutions and courses",
-      color: "#c4b5fd"
-    },
-
-    {
-      id: 6,
-      title: "Child Labour Survey Report 2022",
-      description: "Survey findings on child labour incidence and characteristics in Eswatini.",
-      category: "Special Report",
-      file_url: "/pdfs/child-labour-survey-report-2022.pdf",
-      year: "2022",
-      type: "Reports",
-      size: "2.2 MB",
-      area: "Poverty in employment",
-      topic: "Labour market institutions",
-      color: "#fdba74"
-    },
-
-    {
-      id: 7,
-      title: "Labour Force Survey Report 2021",
-      description: "Annual report on employment, unemployment and labour utilisation in Eswatini.",
-      category: "Labour Force Survey",
-      file_url: "/pdfs/labour-force-survey-report-2021.pdf",
-      year: "2021",
-      type: "Reports",
-      size: "2.3 MB",
-      area: "Labour force",
-      topic: "Labour Force 2023 report",
-      color: "#67e8f9"
-    },
-
-    {
-      id: 8,
-      title: "Skills Demand Survey 2021",
-      description: "Report on skills demand and shortage areas identified by employers.",
-      category: "Skills Report",
-      file_url: "/pdfs/skills-demand-survey-2021.pdf",
-      year: "2021",
-      type: "Reports",
-      size: "1.7 MB",
-      area: "Skills",
-      topic: "Training institutions and courses",
-      color: "#f9a8d4"
-    }
-  ]);
+  // Start with empty array – no flash of fake data
+  const [publications, setPublications] = useState([]);
 
   useEffect(() => {
     const loadPublications = async () => {
@@ -183,7 +159,6 @@ const Publication = () => {
         }
         const data = await response.json();
         if (Array.isArray(data)) {
-          // Map backend fields to frontend expectations
           const mappedData = data.map((item) => {
             const type = normalizePublicationType(item.type, item.category);
             return {
@@ -209,7 +184,6 @@ const Publication = () => {
   // AUTO FILTER DATA
   const areas = [...new Set(publications.map(doc => doc.area))];
   const topics = [...new Set(publications.map(doc => doc.topic))];
-  const years = [...new Set(publications.map(doc => doc.year))];
 
   const numericYears = publications
     .map(doc => Number(doc.year))
@@ -240,7 +214,7 @@ const Publication = () => {
     const matchesType =
       !filters.type || doc.type === filters.type;
 
-    const matchesYear =
+    const matchesDate =
       !filters.date ||
       (doc.year && String(doc.year) === String(new Date(filters.date).getFullYear()));
 
@@ -255,7 +229,7 @@ const Publication = () => {
       matchesArea &&
       matchesTopic &&
       matchesType &&
-      matchesYear &&
+      matchesDate &&
       matchesSearch
     );
   });
@@ -264,7 +238,6 @@ const Publication = () => {
   const handleDocClick = (doc) => {
     setSelectedDoc(doc);
     setShowPdfModal(true);
-
     document.body.style.overflow = "hidden";
   };
 
@@ -272,15 +245,21 @@ const Publication = () => {
   const closeModal = () => {
     setShowPdfModal(false);
     setSelectedDoc(null);
-
     document.body.style.overflow = "auto";
   };
 
-  const resetCategory = (cat) => {
-    setFilters({
-      ...filters,
-      [cat]: null
-    });
+  // OPEN VIEW MODAL
+  const handleViewDetails = (doc) => {
+    setViewingPublication(doc);
+    setShowViewModal(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  // CLOSE VIEW MODAL
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingPublication(null);
+    document.body.style.overflow = "auto";
   };
 
   const showAllCategories = () => {
@@ -288,76 +267,108 @@ const Publication = () => {
       area: null,
       topic: null,
       type: null,
-      year: null,
       date: ""
     });
   };
 
   const getActiveFilterCount = () => {
-
     let count = 0;
-
     if (filters.area) count++;
     if (filters.topic) count++;
     if (filters.type) count++;
-    if (filters.year) count++;
-
+    if (filters.date) count++;
     return count;
   };
 
   const getSelectedDisplay = (type) => {
-
-    if (type === 'area' && filters.area)
-      return filters.area;
-
-    if (type === 'topic' && filters.topic)
-      return filters.topic;
-
-    if (type === 'type' && filters.type)
-      return filters.type;
-
-    if (type === 'year' && filters.year)
-      return filters.year;
-
+    if (type === 'area' && filters.area) return filters.area;
+    if (type === 'topic' && filters.topic) return filters.topic;
+    if (type === 'type' && filters.type) return filters.type;
     return `All ${type}s`;
   };
 
+  const years = [...new Set(publications.map(doc => doc.year))];
+
   // COUNTER EFFECT
   useEffect(() => {
-
     let start = 0;
-
     const maxValue = Math.max(
       publications.length,
       areas.length,
       years.length
     );
-
     const interval = setInterval(() => {
-
       start += 1;
-
       setCount({
         publications: Math.min(start, publications.length),
         areas: Math.min(start, areas.length),
         years: Math.min(start, years.length)
       });
-
       if (start >= maxValue) {
         clearInterval(interval);
       }
-
     }, 25);
-
     return () => clearInterval(interval);
-
   }, [publications, areas.length, years.length]);
 
+  // ---------------------------------------------------------------------------
+  // handleDelete – sends DELETE to API, shows status messages
+  // ---------------------------------------------------------------------------
+  const handleDelete = async (id, title) => {
+    setDeleting(true);
+    setDeleteMessage(null);
+
+    try {
+      const token = localStorage.getItem('lmis_token');
+      const res = await fetch(`${API_ENDPOINT}/publications/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader(token),
+        },
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || 'Delete failed');
+      }
+
+      // Remove from local state
+      setPublications(prev => prev.filter(p => p.id !== id));
+      setDeleteConfirm(null);
+
+      setDeleteMessage({
+        type: 'success',
+        text: `"${title}" has been deleted successfully.`,
+      });
+
+      // Auto-hide success message after 4s
+      setTimeout(() => setDeleteMessage(null), 4000);
+    } catch (err) {
+      setDeleteMessage({
+        type: 'error',
+        text: `Failed to delete: ${err.message}`,
+      });
+      setTimeout(() => setDeleteMessage(null), 5000);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
   return (
     <>
       {isLoading && <PageLoader />}
       <div style={styles.page}>
         <style>{`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.92; }
+          }
           .publication-card {
             animation: fadeInUp 0.35s ease-out both;
             position: relative;
@@ -366,10 +377,64 @@ const Publication = () => {
             min-height: 320px;
             background-size: cover;
             background-position: center;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
-            transition: transform 0.4s ease, box-shadow 0.3s ease;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid transparent;
+            cursor: pointer;
+            color: #ffffff;
           }
 
+          .publication-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db 0%, #2ecc71 50%, #f39c12 100%);
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 3;
+          }
+
+          .publication-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+            opacity: 0.20;
+            z-index: 1;
+            pointer-events: none;
+          }
+
+          .publication-card > * {
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+          }
+
+          .publication-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(52,152,219,0.25);
+            border-color: #3498db;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e3f2fd 100%);
+          }
+
+          .publication-card:hover::before {
+            width: 100%;
+          }
+
+          .publication-card:hover .docTitle {
+            color: #3498db;
+          }
+          .publication-card:hover .docDesc {
+            color: #555555;
+          }
+          .publication-card:hover .reportBadge {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.15);
+          }
 
           .publication-actions {
             position: absolute;
@@ -378,46 +443,64 @@ const Publication = () => {
             bottom: 20px;
             display: flex;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
             z-index: 4;
-            opacity: 0;
-            transform: translateY(8px);
-            transition: opacity 0.28s ease, transform 0.28s ease;
-          }
-
-          .publication-card:hover .publication-actions {
             opacity: 1;
             transform: translateY(0);
+            flex-wrap: wrap;
           }
 
           .publication-actions .btn {
-            padding: 10px 14px;
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
             border-radius: 12px;
             font-weight: 700;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             cursor: pointer;
             text-decoration: none;
-            color: #073049;
-            background: rgba(255,255,255,0.95);
-            box-shadow: 0 8px 20px rgba(3,7,18,0.08);
+            justify-content: center;
             border: none;
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
           }
 
-          .publication-actions .btn.icon { padding: 10px; border-radius: 10px; }
+          .publication-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+          }
 
-          .publication-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+          .publication-actions .btn-view {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          }
+          .publication-actions .btn-view:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+          }
+
+          .publication-actions .btn-download {
+            background: linear-gradient(135deg, #27ae60 0%, #16a085 100%);
+          }
+          .publication-actions .btn-download:hover {
+            background: linear-gradient(135deg, #16a085 0%, #27ae60 100%);
+          }
+
+          .publication-actions .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+          }
+          .publication-actions .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
           }
 
           .publication-status {
             display: inline-flex;
             align-items: center;
-            padding: 6px 12px;
+            padding: 4px 8px;
             border-radius: 999px;
-            font-size: 11px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.03em;
@@ -427,520 +510,340 @@ const Publication = () => {
             z-index: 3;
           }
 
-          .publication-status.new {
-            background: rgba(16, 185, 129, 0.9);
-            color: #ffffff;
-            animation: pulse 1.8s ease-in-out infinite;
+          /* Elegant dropdown styling */
+          .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+            z-index: 100;
+            max-height: 260px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid rgba(0,0,0,0.04);
+            animation: fadeInUp 0.2s ease-out;
           }
 
-          .publication-status.updated {
-            background: rgba(59, 130, 246, 0.9);
-            color: #ffffff;
-            animation: pulse 2s ease-in-out infinite;
+          .dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+          }
+          .dropdown-menu::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .dropdown-menu::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 12px;
           }
 
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(16px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
+          .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1e293b;
+            transition: all 0.15s ease;
           }
-
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-              opacity: 1;
-            }
-            50% {
-              transform: scale(1.03);
-              opacity: 0.92;
-            }
+          .dropdown-item:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+          }
+          .dropdown-item:active {
+            background: #e2e8f0;
           }
         `}</style>
 
-      {/* HEADER */}
-
-      
-
-      {/* HERO */}
-
-      <section style={styles.hero}>
-
-        <div style={styles.heroOverlay}></div>
-
-        <div style={{
-          ...styles.heroInner,
-          position: 'relative',
-          zIndex: 2
-        }}>
-
-          <p style={styles.heroMini}>
-            Kingdom of Eswatini
-          </p>
-
-          <h1 style={styles.heroTitle}>
-            Publications
-          </h1>
-
-          <p style={styles.heroSub}>
-            Access official labour market reports,
-            acts and research publications.
-          </p>
-
-        </div>
-
-      </section>
-
-      {/* MAIN */}
-
-      <div style={styles.container}>
-
-        {/* FILTERS */}
-
-        <div style={styles.filterBox}>
-
-          <div style={styles.filterHeader}>
-
-            <span style={styles.filterTitle}>
-              Filter Publications
-            </span>
-
-            {getActiveFilterCount() > 0 && (
-              <button
-                style={styles.clearAllBtn}
-                onClick={showAllCategories}
-              >
-                Clear All
-              </button>
+        {/* Delete Status Message */}
+        {deleteMessage && (
+          <div style={{
+            ...styles.deleteStatusMessage,
+            ...(deleteMessage.type === 'success' ? styles.deleteStatusMessageSuccess : styles.deleteStatusMessageError)
+          }}>
+            {deleteMessage.type === 'success' ? (
+              <FaCheckCircle style={{ marginRight: 8 }} />
+            ) : (
+              <FaExclamationCircle style={{ marginRight: 8 }} />
             )}
-
+            {deleteMessage.text}
           </div>
-
-          <div style={styles.filterGrid}>
-
-            {/* AREA */}
-
-            <div style={styles.filterGroup}>
-
-              <div style={styles.filterLabel}>
-                By Area
-              </div>
-
-              <div style={styles.dropdownContainer}>
-
-                <div
-                  style={styles.dropdownButton}
-                  onClick={() => {
-                    setIsAreaOpen(!isAreaOpen);
-                    setIsTopicOpen(false);
-                    setIsYearOpen(false);
-                  }}
-                >
-
-                  <span>
-                    {getSelectedDisplay('area')}
-                  </span>
-
-                  <FaCaretDown />
-
-                </div>
-
-                {isAreaOpen && (
-
-                  <div style={styles.dropdownMenu}>
-
-                    <div
-                      style={styles.dropdownItem}
-                      onClick={() => {
-                        setFilters({
-                          ...filters,
-                          area: null
-                        });
-                        setIsAreaOpen(false);
-                      }}
-                    >
-                      All Areas
-                    </div>
-
-                    {areas.map(area => (
-
-                      <div
-                        key={area}
-                        style={styles.dropdownItem}
-                        onClick={() => {
-                          setFilters({
-                            ...filters,
-                            area: area
-                          });
-                          setIsAreaOpen(false);
-                        }}
-                      >
-                        {area}
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* TOPIC */}
-
-            <div style={styles.filterGroup}>
-
-              <div style={styles.filterLabel}>
-                By Topic
-              </div>
-
-              <div style={styles.dropdownContainer}>
-
-                <div
-                  style={styles.dropdownButton}
-                  onClick={() => {
-                    setIsTopicOpen(!isTopicOpen);
-                    setIsAreaOpen(false);
-                    setIsYearOpen(false);
-                  }}
-                >
-
-                  <span>
-                    {getSelectedDisplay('topic')}
-                  </span>
-
-                  <FaCaretDown />
-
-                </div>
-
-                {isTopicOpen && (
-
-                  <div style={styles.dropdownMenu}>
-
-                    <div
-                      style={styles.dropdownItem}
-                      onClick={() => {
-                        setFilters({
-                          ...filters,
-                          topic: null
-                        });
-                        setIsTopicOpen(false);
-                      }}
-                    >
-                      All Topics
-                    </div>
-
-                    {topics.map(topic => (
-
-                      <div
-                        key={topic}
-                        style={styles.dropdownItem}
-                        onClick={() => {
-                          setFilters({
-                            ...filters,
-                            topic: topic
-                          });
-                          setIsTopicOpen(false);
-                        }}
-                      >
-                        {topic}
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* TYPE */}
-
-            <div style={styles.filterGroup}>
-
-              <div style={styles.filterLabel}>
-                By Type
-              </div>
-
-              <div style={styles.dropdownContainer}>
-
-                <div
-                  style={styles.dropdownButton}
-                  onClick={() => {
-                    setIsTypeOpen(!isTypeOpen);
-                    setIsYearOpen(false);
-                    setIsTopicOpen(false);
-                    setIsAreaOpen(false);
-                  }}
-                >
-
-                  <span>
-                    {getSelectedDisplay('type')}
-                  </span>
-
-                  <FaCaretDown />
-
-                </div>
-
-                {isTypeOpen && (
-
-                  <div style={styles.dropdownMenu}>
-
-                    <div
-                      style={styles.dropdownItem}
-                      onClick={() => {
-                        setFilters({
-                          ...filters,
-                          type: null
-                        });
-                        setIsTypeOpen(false);
-                      }}
-                    >
-                      All Types
-                    </div>
-
-                    {publicationTypes.map(type => (
-
-                      <div
-                        key={type}
-                        style={styles.dropdownItem}
-                        onClick={() => {
-                          setFilters({
-                            ...filters,
-                            type: type
-                          });
-                          setIsTypeOpen(false);
-                        }}
-                      >
-                        {type}
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* YEAR */}
-
-<div style={styles.filterGroup}>
-
-  <div style={styles.filterLabel}>
-    Select Date
-  </div>
-
-  <div style={styles.calendarWrapper}>
-
-    <FaCalendarAlt style={styles.calendarIcon} />
-
-    <input
-      type="date"
-      value={filters.date}
-      onChange={(e) =>
-        setFilters({
-          ...filters,
-          date: e.target.value
-        })
-      }
-      style={styles.calendarInput}
-    />
-
-  </div>
-
-</div>
-
-            {/* SHOW ALL */}
-
-            <button
-              style={styles.showAllBtn}
-              onClick={showAllCategories}
-            >
-              <FaEye style={{ marginRight: '8px' }} />
-              Show All
-            </button>
-
+        )}
+
+        {/* HERO */}
+        <section style={styles.hero}>
+          <div style={styles.heroOverlay}></div>
+          <div style={{ ...styles.heroInner, position: 'relative', zIndex: 2 }}>
+            <p style={styles.heroMini}>Kingdom of Eswatini</p>
+            <h1 style={styles.heroTitle}>Publications</h1>
+            <p style={styles.heroSub}>Access official labour market reports, acts and research publications.</p>
           </div>
+        </section>
 
-        </div>
+        {/* MAIN */}
+        <div style={styles.container}>
 
-        {/* SEARCH */}
-
-        <div style={styles.searchSection}>
-
-          <div style={styles.searchLabel}>
-            Publications ({filteredDocs.length})
-          </div>
-
-          <div style={styles.searchWrapper}>
-
-            <input
-              type="text"
-              placeholder="Search..."
-              style={styles.searchInput}
-              value={searchQuery}
-              onChange={(e) =>
-                setSearchQuery(e.target.value)
-              }
-            />
-
-          </div>
-
-        </div>
-
-        {/* GRID */}
-
-        <div style={styles.gridHeader}>
-          <h3 style={styles.gridTitle}>Publications ({filteredDocs.length})</h3>
-          <button style={styles.clearFiltersBtn} onClick={showAllCategories}>
-            Clear All Filters
-          </button>
-        </div>
-
-        <div style={styles.docGrid}>
-
-          {filteredDocs.map(doc => (
-
-            <div
-              key={doc.id}
-              className="publication-card"
-              style={{
-                ...styles.docCard,
-                backgroundImage: getPublicationTypeColor(doc)
-              }}
-              onClick={() => handleDocClick(doc)}
-            >
-
-                    <div style={styles.docYear}>
-                      {doc.year}
-                    </div>
-
-              {getDocStatus(doc) && (
-                <span
-                  className={`publication-status ${getDocStatus(doc).toLowerCase()}`}
-                  style={styles.statusBadge}
-                >
-                  {getDocStatus(doc)}
-                </span>
+          {/* FILTERS */}
+          <div style={styles.filterBox}>
+            <div style={styles.filterHeader}>
+              <span style={styles.filterTitle}>Filter Publications</span>
+              {getActiveFilterCount() > 0 && (
+                <button style={styles.clearAllBtn} onClick={showAllCategories}>Clear All</button>
               )}
+            </div>
 
-              <h4 style={styles.docTitle}>
-                {doc.title}
-              </h4>
+            <div style={styles.filterGrid}>
 
-              <p style={styles.docDesc}>
-                {doc.description}
-              </p>
-
-              <div style={styles.docType}>
-
-                <span style={styles.reportBadge}>
-                  {doc.category}
-                </span>
-
-                <span style={styles.docSize}>
-                  {doc.size}
-                </span>
-
+              {/* AREA */}
+              <div style={styles.filterGroup}>
+                <div style={styles.filterLabel}>By Area</div>
+                <div style={{ position: 'relative' }} ref={areaRef}>
+                  <div style={styles.dropdownButton} onClick={() => {
+                    setIsAreaOpen(prev => !prev);
+                    setIsTopicOpen(false);
+                    setIsTypeOpen(false);
+                  }}>
+                    <span>{getSelectedDisplay('area')}</span>
+                    <FaCaretDown style={{ transition: 'transform 0.2s', transform: isAreaOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+                  </div>
+                  {isAreaOpen && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-item" onClick={() => { setFilters({ ...filters, area: null }); setIsAreaOpen(false); }}>
+                        All Areas
+                      </div>
+                      {areas.map(area => (
+                        <div key={area} className="dropdown-item" onClick={() => { setFilters({ ...filters, area }); setIsAreaOpen(false); }}>
+                          {area}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="publication-actions">
-                <button
-                  className="btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDocClick(doc);
-                  }}
-                >
-                  <FaEye />
-                  <span style={{ marginLeft: 6 }}>View</span>
-                </button>
+              {/* TOPIC */}
+              <div style={styles.filterGroup}>
+                <div style={styles.filterLabel}>By Topic</div>
+                <div style={{ position: 'relative' }} ref={topicRef}>
+                  <div style={styles.dropdownButton} onClick={() => {
+                    setIsTopicOpen(prev => !prev);
+                    setIsAreaOpen(false);
+                    setIsTypeOpen(false);
+                  }}>
+                    <span>{getSelectedDisplay('topic')}</span>
+                    <FaCaretDown style={{ transition: 'transform 0.2s', transform: isTopicOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+                  </div>
+                  {isTopicOpen && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-item" onClick={() => { setFilters({ ...filters, topic: null }); setIsTopicOpen(false); }}>
+                        All Topics
+                      </div>
+                      {topics.map(topic => (
+                        <div key={topic} className="dropdown-item" onClick={() => { setFilters({ ...filters, topic }); setIsTopicOpen(false); }}>
+                          {topic}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                <a
-                  href={doc.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FaFilePdf />
-                  <span style={{ marginLeft: 6 }}>Download</span>
-                </a>
+              {/* TYPE */}
+              <div style={styles.filterGroup}>
+                <div style={styles.filterLabel}>By Type</div>
+                <div style={{ position: 'relative' }} ref={typeRef}>
+                  <div style={styles.dropdownButton} onClick={() => {
+                    setIsTypeOpen(prev => !prev);
+                    setIsAreaOpen(false);
+                    setIsTopicOpen(false);
+                  }}>
+                    <span>{getSelectedDisplay('type')}</span>
+                    <FaCaretDown style={{ transition: 'transform 0.2s', transform: isTypeOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+                  </div>
+                  {isTypeOpen && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-item" onClick={() => { setFilters({ ...filters, type: null }); setIsTypeOpen(false); }}>
+                        All Types
+                      </div>
+                      {publicationTypes.map(type => (
+                        <div key={type} className="dropdown-item" onClick={() => { setFilters({ ...filters, type }); setIsTypeOpen(false); }}>
+                          {type}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* DATE */}
+              <div style={styles.filterGroup}>
+                <div style={styles.filterLabel}>Select Date</div>
+                <div style={styles.calendarWrapper}>
+                  <FaCalendarAlt style={styles.calendarIcon} />
+                  <input
+                    type="date"
+                    value={filters.date}
+                    onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+                    style={styles.calendarInput}
+                  />
+                </div>
               </div>
 
             </div>
+          </div>
 
-          ))}
+          {/* SEARCH */}
+          <div style={styles.searchSection}>
+            <div style={styles.searchLabel}>Search Publications</div>
+            <div style={styles.searchWrapper}>
+              <input
+                type="text"
+                placeholder="Search by title, description, type or category..."
+                style={styles.searchInput}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* GRID HEADER */}
+          <div style={styles.gridHeader}>
+            <h3 style={styles.gridTitle}>Publications ({filteredDocs.length})</h3>
+            <button style={styles.clearFiltersBtn} onClick={showAllCategories}>Clear All Filters</button>
+          </div>
+
+          {/* GRID */}
+          <div style={styles.docGrid}>
+            {filteredDocs.map(doc => (
+              <div
+                key={doc.id}
+                className="publication-card"
+                style={{ ...styles.docCard, backgroundImage: getPublicationTypeColor(doc) }}
+                onClick={() => handleDocClick(doc)}
+              >
+                <div style={styles.docYear}>{doc.year}</div>
+                {getDocStatus(doc) && (
+                  <span className={`publication-status ${getDocStatus(doc).toLowerCase()}`} style={styles.statusBadge}>
+                    {getDocStatus(doc)}
+                  </span>
+                )}
+                <h4 className="docTitle" style={styles.docTitle}>{doc.title}</h4>
+                <p className="docDesc" style={styles.docDesc}>{doc.description}</p>
+                <div style={styles.docType}>
+                  <span className="reportBadge" style={styles.reportBadge}>{doc.category}</span>
+                  <span style={styles.docSize}>{doc.size}</span>
+                </div>
+                <div className="publication-actions">
+                  <button className="btn btn-view" onClick={(e) => { e.stopPropagation(); handleViewDetails(doc); }}>
+                    <FaEye /><span style={{ marginLeft: 6 }}>View</span>
+                  </button>
+                  <a href={doc.file_url} target="_blank" rel="noreferrer" className="btn btn-download" onClick={(e) => e.stopPropagation()}>
+                    <FaFilePdf /><span style={{ marginLeft: 6 }}>Download</span>
+                  </a>
+                  {isAdmin && (
+                    <button className="btn btn-delete" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(doc); }} disabled={deleting}>
+                      <FaTrash /><span style={{ marginLeft: 6 }}>Delete</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
         </div>
+
+        {/* VIEW PUBLICATION DETAILS MODAL */}
+        {showViewModal && viewingPublication && (
+          <div style={styles.viewModalOverlay}>
+            <div style={styles.viewModal}>
+              <div style={styles.viewModalHeader}>
+                <h3 style={styles.viewModalTitle}>📕 Publication Details</h3>
+                <button style={styles.viewModalCloseBtn} onClick={closeViewModal}><FaClose /></button>
+              </div>
+              <div style={styles.viewModalBody}>
+                <div style={styles.viewModalField}>
+                  <label style={styles.viewModalLabel}>Title</label>
+                  <p style={styles.viewModalText}>{viewingPublication.title}</p>
+                </div>
+                <div style={styles.viewModalField}>
+                  <label style={styles.viewModalLabel}>Description</label>
+                  <p style={styles.viewModalText}>{viewingPublication.description}</p>
+                </div>
+                <div style={styles.viewModalField}>
+                  <label style={styles.viewModalLabel}>Category</label>
+                  <span style={styles.viewModalBadge}>{viewingPublication.category}</span>
+                </div>
+                <div style={styles.viewModalRow}>
+                  <div style={styles.viewModalField}>
+                    <label style={styles.viewModalLabel}>Year</label>
+                    <p style={styles.viewModalText}>{viewingPublication.year}</p>
+                  </div>
+                  <div style={styles.viewModalField}>
+                    <label style={styles.viewModalLabel}>Type</label>
+                    <p style={styles.viewModalText}>{viewingPublication.type}</p>
+                  </div>
+                </div>
+                {viewingPublication.file_url && (
+                  <div style={styles.viewModalField}>
+                    <label style={styles.viewModalLabel}>File URL</label>
+                    <a href={viewingPublication.file_url} target="_blank" rel="noreferrer" style={styles.viewModalLink}>{viewingPublication.file_url}</a>
+                  </div>
+                )}
+              </div>
+              <div style={styles.viewModalFooter}>
+                {viewingPublication.file_url && (
+                  <a href={viewingPublication.file_url} download target="_blank" rel="noreferrer" style={styles.viewModalDownloadBtn}>
+                    <FaFilePdf style={{ marginRight: 8 }} /> Download File
+                  </a>
+                )}
+                <button style={styles.viewModalCloseBtnSecondary} onClick={closeViewModal}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DELETE CONFIRMATION MODAL */}
+        {deleteConfirm && (
+          <div style={styles.deleteModalOverlay}>
+            <div style={styles.deleteModal}>
+              <div style={styles.deleteModalHeader}>
+                <FaExclamationCircle style={styles.deleteModalWarningIcon} />
+                <h2 style={styles.deleteModalTitle}>Delete Publication?</h2>
+                <button style={styles.deleteModalCloseBtn} onClick={() => setDeleteConfirm(null)} disabled={deleting}><FaClose /></button>
+              </div>
+              <div style={styles.deleteModalBody}>
+                <p style={styles.deleteModalText}>Are you sure you want to delete:</p>
+                <p style={styles.deleteModalPublicationTitle}>"{deleteConfirm.title}"</p>
+                <p style={styles.deleteModalWarningText}>This action cannot be undone. The publication will be removed from the database and the public page.</p>
+              </div>
+              <div style={styles.deleteModalFooter}>
+                <button style={styles.deleteModalCancelBtn} onClick={() => setDeleteConfirm(null)} disabled={deleting}>Cancel</button>
+                <button style={styles.deleteModalConfirmBtn} onClick={() => handleDelete(deleteConfirm.id, deleteConfirm.title)} disabled={deleting}>
+                  {deleting ? <FaSpinner style={styles.deleteModalSpinner} /> : <FaTrash style={{ marginRight: 8 }} />}
+                  {deleting ? 'Deleting...' : 'Delete Publication'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDF MODAL */}
+        {showPdfModal && selectedDoc && (
+          <div style={styles.pdfOverlay}>
+            <div style={styles.pdfModal}>
+              <div style={styles.pdfHeader}>
+                <h3 style={styles.pdfTitle}>{selectedDoc.title}</h3>
+                <div style={styles.pdfActions}>
+                  <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer" style={styles.downloadBtn}>Download</a>
+                  <button style={styles.closeBtn} onClick={closeModal}><FaClose /></button>
+                </div>
+              </div>
+              <iframe src={selectedDoc.file_url} title={selectedDoc.title} style={styles.pdfFrame} />
+            </div>
+          </div>
+        )}
 
       </div>
-
-      {/* PDF MODAL */}
-
-      {showPdfModal && selectedDoc && (
-
-        <div style={styles.pdfOverlay}>
-
-          <div style={styles.pdfModal}>
-
-            {/* HEADER */}
-
-            <div style={styles.pdfHeader}>
-
-              <h3 style={styles.pdfTitle}>
-                {selectedDoc.title}
-              </h3>
-
-              <div style={styles.pdfActions}>
-
-                <a
-                  href={selectedDoc.file_url}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  style={styles.downloadBtn}
-                >
-                  Download
-                </a>
-
-                <button
-                  style={styles.closeBtn}
-                  onClick={closeModal}
-                >
-                  <FaClose />
-                </button>
-
-              </div>
-
-            </div>
-
-            {/* PDF */}
-
-            <iframe
-              src={selectedDoc.file_url}
-              title={selectedDoc.title}
-              style={styles.pdfFrame}
-            />
-
-          </div>
-
-        </div>
-
-      )}
-
-    </div>
     </>
   );
 };
@@ -953,59 +856,28 @@ const styles = {
     fontFamily: 'sans-serif'
   },
 
-  topHeader: {
-    backgroundColor: '#fff',
-    padding: '15px 60px'
-  },
-
-  logoSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px'
-  },
-
-  flag: {
-    height: '35px'
-  },
-
-  brandTitle: {
-    margin: 0,
-    color: '#103063'
-  },
-
-  brandSub: {
-    margin: 0,
-    fontSize: '10px'
-  },
-
   hero: {
-  position: "relative",
-  minHeight: "320px",
-  width: "100%",
+    position: "relative",
+    minHeight: "320px",
+    width: "100%",
+    padding: "40px 80px",
+    backgroundImage: `url(${heroImage})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    display: "flex",
+    alignItems: "center",
+    color: "#fff",
+    overflow: "hidden"
+  },
 
-  padding: "40px 80px",
+  heroOverlay: {
+    position: "absolute",
+    inset: 0,
+    background: "linear-gradient(90deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.55))",
+    zIndex: 1
+  },
 
-  backgroundImage: `url(${heroImage})`,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
-
-  display: "flex",
-  alignItems: "center",
-  color: "#fff",
-
-  overflow: "hidden"
-},
-
-heroOverlay: {
-  position: "absolute",
-  inset: 0,
-
-  background:
-    "linear-gradient(90deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.55))",
-
-  zIndex: 1
-},
   heroInner: {
     maxWidth: '800px'
   },
@@ -1029,28 +901,35 @@ heroOverlay: {
 
   filterBox: {
     backgroundColor: '#fff',
-    borderRadius: '14px',
-    padding: '25px',
-    marginBottom: '30px'
+    borderRadius: '16px',
+    padding: '28px 30px',
+    marginBottom: '30px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+    border: '1px solid rgba(0,0,0,0.03)'
   },
 
   filterHeader: {
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: '20px'
   },
 
   filterTitle: {
-    fontWeight: 'bold'
+    fontWeight: '700',
+    fontSize: '16px',
+    color: '#0f172a'
   },
 
   clearAllBtn: {
     backgroundColor: '#ef4444',
     color: '#fff',
     border: 'none',
-    padding: '8px 15px',
+    padding: '8px 16px',
     borderRadius: '8px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600'
   },
 
   filterGrid: {
@@ -1066,49 +945,23 @@ heroOverlay: {
   },
 
   filterLabel: {
-    fontWeight: '600'
-  },
-
-  dropdownContainer: {
-    position: 'relative'
+    fontWeight: '600',
+    fontSize: '13px',
+    color: '#475569'
   },
 
   dropdownButton: {
     backgroundColor: '#fff',
-    border: '1px solid #ddd',
-    padding: '12px',
-    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    padding: '12px 14px',
+    borderRadius: '10px',
     display: 'flex',
     justifyContent: 'space-between',
-    cursor: 'pointer'
-  },
-
-  dropdownMenu: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    marginTop: '5px',
-    overflow: 'hidden',
-    zIndex: 10,
-    border: '1px solid #ddd',
-    maxHeight: '250px',
-    overflowY: 'auto'
-  },
-
-  dropdownItem: {
-    padding: '12px',
-    cursor: 'pointer'
-  },
-
-  showAllBtn: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer'
+    alignItems: 'center',
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#1e293b',
+    transition: 'border-color 0.2s, box-shadow 0.2s'
   },
 
   searchSection: {
@@ -1116,25 +969,33 @@ heroOverlay: {
     borderRadius: '12px',
     display: 'flex',
     marginBottom: '30px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+    border: '1px solid rgba(0,0,0,0.03)'
   },
 
   searchLabel: {
-    padding: '15px 20px',
+    padding: '15px 24px',
     backgroundColor: '#f8fafc',
-    fontWeight: 'bold'
+    fontWeight: '700',
+    fontSize: '14px',
+    color: '#0f172a',
+    whiteSpace: 'nowrap'
   },
 
   searchWrapper: {
     flex: 1,
-    padding: '10px 20px'
+    padding: '8px 20px'
   },
 
   searchInput: {
     width: '100%',
-    padding: '12px',
+    padding: '10px 14px',
     borderRadius: '8px',
-    border: '1px solid #ddd'
+    border: '1px solid #e2e8f0',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.2s'
   },
 
   docGrid: {
@@ -1177,10 +1038,11 @@ heroOverlay: {
     position: 'relative',
     overflow: 'hidden',
     transition: 'transform 0.4s ease, box-shadow 0.3s ease',
-    backgroundImage: 'none',
-    color: '#0f172a',
+    color: '#ffffff',
     minHeight: '320px',
-    zIndex: 2
+    zIndex: 2,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
   },
 
   docYear: {
@@ -1188,9 +1050,9 @@ heroOverlay: {
     top: '20px',
     right: '20px',
     fontSize: '12px',
-    color: '#1e40af',
+    color: '#ffffff',
     zIndex: 3,
-    backgroundColor: '#dbeafe',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     padding: '6px 12px',
     borderRadius: '20px',
     fontWeight: '600'
@@ -1198,7 +1060,7 @@ heroOverlay: {
 
   docTitle: {
     marginTop: '140px',
-    color: '#0f172a',
+    color: '#ffffff',
     zIndex: 2,
     position: 'relative'
   },
@@ -1213,7 +1075,7 @@ heroOverlay: {
   },
 
   docDesc: {
-    color: '#475569',
+    color: '#f8f9fa',
     fontSize: '14px',
     zIndex: 2,
     position: 'relative'
@@ -1228,20 +1090,49 @@ heroOverlay: {
   },
 
   reportBadge: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     padding: '4px 10px',
     borderRadius: '20px',
     fontSize: '12px',
-    color: '#0f172a',
+    color: '#ffffff',
     zIndex: 2,
     position: 'relative'
   },
 
   docSize: {
     fontSize: '12px',
-    color: '#64748b',
+    color: '#f0f0f0',
     zIndex: 2,
     position: 'relative'
+  },
+
+  calendarWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '0 12px',
+    backgroundColor: '#fff',
+    transition: 'border-color 0.2s, box-shadow 0.2s'
+  },
+
+  calendarIcon: {
+    color: '#94a3b8',
+    fontSize: '14px',
+    marginRight: '8px',
+    flexShrink: 0
+  },
+
+  calendarInput: {
+    border: 'none',
+    padding: '12px 0',
+    flex: 1,
+    fontSize: '14px',
+    color: '#1e293b',
+    outline: 'none',
+    fontFamily: 'inherit',
+    backgroundColor: 'transparent'
   },
 
   pdfOverlay: {
@@ -1300,58 +1191,294 @@ heroOverlay: {
     borderRadius: '8px',
     cursor: 'pointer'
   },
-  yearButtonContent: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px'
-},
-
-
-
-yearDropdownMenu: {
-  position: 'absolute',
-  top: '100%',
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  borderRadius: '12px',
-  marginTop: '8px',
-  zIndex: 1000,
-  border: '1px solid #ddd',
-  padding: '15px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.12)'
-},
-
-yearGrid: {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '10px',
-  marginTop: '10px',
-  maxHeight: '260px',
-  overflowY: 'auto'
-},
-
-yearItem: {
-  padding: '10px',
-  textAlign: 'center',
-  borderRadius: '10px',
-  backgroundColor: '#f1f5f9',
-  cursor: 'pointer',
-  fontSize: '13px',
-  fontWeight: '600',
-  transition: '0.2s ease'
-},
-
-yearItemActive: {
-  backgroundColor: '#2563eb',
-  color: '#fff'
-},
 
   pdfFrame: {
     width: '100%',
     height: '100%',
     border: 'none',
     flex: 1
+  },
+
+  // Delete status message
+  deleteStatusMessage: {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    zIndex: 9999999,
+    padding: '14px 22px',
+    borderRadius: '12px',
+    fontWeight: '600',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+    animation: 'fadeInUp 0.3s ease-out'
+  },
+
+  deleteStatusMessageSuccess: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    border: '1px solid #a7f3d0'
+  },
+
+  deleteStatusMessageError: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+    border: '1px solid #fecaca'
+  },
+
+  // View modal
+  viewModalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999999
+  },
+
+  viewModal: {
+    width: '96%',
+    maxWidth: '700px',
+    maxHeight: '90vh',
+    backgroundColor: '#fff',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
+  },
+
+  viewModalHeader: {
+    backgroundColor: '#103063',
+    color: '#fff',
+    padding: '18px 24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottom: '1px solid rgba(255,255,255,0.1)'
+  },
+
+  viewModalTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: '700'
+  },
+
+  viewModalCloseBtn: {
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    border: 'none',
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  viewModalBody: {
+    padding: '24px',
+    overflowY: 'auto',
+    flexGrow: 1
+  },
+
+  viewModalField: {
+    marginBottom: '20px'
+  },
+
+  viewModalLabel: {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: '8px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+
+  viewModalText: {
+    fontSize: '15px',
+    color: '#0f172a',
+    lineHeight: '1.6',
+    margin: 0
+  },
+
+  viewModalBadge: {
+    display: 'inline-block',
+    padding: '8px 14px',
+    borderRadius: '999px',
+    backgroundColor: '#e0f2fe',
+    color: '#0c4a6e',
+    fontSize: '13px',
+    fontWeight: '600'
+  },
+
+  viewModalRow: {
+    display: 'flex',
+    gap: '20px',
+    marginBottom: '20px'
+  },
+
+  viewModalLink: {
+    color: '#2563eb',
+    textDecoration: 'underline',
+    fontSize: '14px'
+  },
+
+  viewModalFooter: {
+    padding: '18px 24px',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px'
+  },
+
+  viewModalDownloadBtn: {
+    backgroundColor: '#10b981',
+    color: '#fff',
+    padding: '12px 20px',
+    borderRadius: '12px',
+    textDecoration: 'none',
+    fontWeight: '700',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    transition: 'background-color 0.2s ease'
+  },
+
+  viewModalCloseBtnSecondary: {
+    backgroundColor: '#f1f5f9',
+    color: '#0f172a',
+    padding: '12px 20px',
+    borderRadius: '12px',
+    border: 'none',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease'
+  },
+
+  // Delete modal
+  deleteModalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999999
+  },
+
+  deleteModal: {
+    width: '90%',
+    maxWidth: '480px',
+    backgroundColor: '#fff',
+    borderRadius: '20px',
+    overflow: 'hidden',
+    boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+    animation: 'fadeInUp 0.25s ease-out'
+  },
+
+  deleteModalHeader: {
+    padding: '20px 24px',
+    borderBottom: '1px solid #e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+
+  deleteModalWarningIcon: {
+    color: '#ef4444',
+    fontSize: '28px',
+    flexShrink: 0
+  },
+
+  deleteModalTitle: {
+    margin: 0,
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#0f172a',
+    flex: 1
+  },
+
+  deleteModalCloseBtn: {
+    backgroundColor: 'transparent',
+    color: '#94a3b8',
+    border: 'none',
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  deleteModalBody: {
+    padding: '24px'
+  },
+
+  deleteModalText: {
+    margin: '0 0 8px 0',
+    color: '#475569',
+    fontSize: '15px'
+  },
+
+  deleteModalPublicationTitle: {
+    fontWeight: '700',
+    fontSize: '16px',
+    color: '#0f172a',
+    margin: '0 0 16px 0'
+  },
+
+  deleteModalWarningText: {
+    fontSize: '13px',
+    color: '#94a3b8',
+    margin: 0,
+    lineHeight: 1.5
+  },
+
+  deleteModalFooter: {
+    padding: '16px 24px',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px'
+  },
+
+  deleteModalCancelBtn: {
+    padding: '10px 20px',
+    borderRadius: '10px',
+    border: '1px solid #e2e8f0',
+    backgroundColor: '#fff',
+    color: '#475569',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'background-color 0.2s'
+  },
+
+  deleteModalConfirmBtn: {
+    padding: '10px 22px',
+    borderRadius: '10px',
+    border: 'none',
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    fontWeight: '700',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    transition: 'background-color 0.2s'
+  },
+
+  deleteModalSpinner: {
+    animation: 'spin 1s linear infinite',
+    marginRight: 8
   }
 };
 
