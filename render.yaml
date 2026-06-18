@@ -1,5 +1,25 @@
 services:
   - type: web
+    name: elmis-eswatini-frontend
+    runtime: node
+    plan: free
+    region: oregon
+    repo: https://github.com/YOUR_USERNAME/my-app.git
+    branch: main
+    rootDir: eswatini_lmis_frontend
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s build -l 3000
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://elmiseswatini-backend.onrender.com
+      - key: REACT_APP_API_BASE
+        value: https://elmiseswatini-backend.onrender.com
+      - key: REACT_APP_FRONTEND_URL
+        value: https://elmis-eswatini-qzwo.onrender.com
+      - key: NODE_ENV
+        value: production
+
+  - type: web
     name: lmis-backend
     runtime: docker
     plan: free
