@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINT } from '../services/api';
-import { FaBook, FaTrash, FaSpinner, FaChevronLeft, FaDownload, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
+import { FaBook, FaTrash, FaSpinner, FaChevronLeft, FaDownload, FaExclamationCircle, FaCheckCircle, FaEye } from 'react-icons/fa';
 import './AdminPublicationsManage.css';
 
 const AdminPublicationsManage = () => {
@@ -14,6 +14,7 @@ const AdminPublicationsManage = () => {
   const [deleteMessage, setDeleteMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [viewingPublication, setViewingPublication] = useState(null);
 
   // Fetch all publications
   useEffect(() => {
@@ -168,6 +169,13 @@ const AdminPublicationsManage = () => {
               </div>
 
               <div className="card-footer">
+                <button
+                  className="view-btn"
+                  onClick={() => setViewingPublication(pub)}
+                  title="View publication details"
+                >
+                  <FaEye /> View
+                </button>
                 {pub.file_url && (
                   <a href={pub.file_url} target="_blank" rel="noopener noreferrer" className="download-link">
                     <FaDownload /> Download
@@ -214,6 +222,63 @@ const AdminPublicationsManage = () => {
               >
                 {deleting ? <FaSpinner className="spinner" /> : <FaTrash />}
                 {deleting ? 'Deleting...' : 'Delete Publication'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Publication Modal */}
+      {viewingPublication && (
+        <div className="modal-overlay" onClick={() => setViewingPublication(null)}>
+          <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <FaBook className="view-icon" />
+              <h2>Publication Details</h2>
+            </div>
+            <div className="modal-body view-modal-body">
+              <div className="view-field">
+                <label>Title</label>
+                <p className="field-value">{viewingPublication.title}</p>
+              </div>
+              <div className="view-field">
+                <label>Description</label>
+                <p className="field-value">{viewingPublication.description}</p>
+              </div>
+              <div className="view-field">
+                <label>Category</label>
+                <p className="field-value badge-style">{viewingPublication.category}</p>
+              </div>
+              <div className="view-field-row">
+                <div className="view-field">
+                  <label>Year</label>
+                  <p className="field-value">📅 {viewingPublication.year}</p>
+                </div>
+                <div className="view-field">
+                  <label>Type</label>
+                  <p className="field-value">📄 {viewingPublication.type}</p>
+                </div>
+              </div>
+              {viewingPublication.file_url && (
+                <div className="view-field">
+                  <label>File URL</label>
+                  <a href={viewingPublication.file_url} target="_blank" rel="noopener noreferrer" className="file-link">
+                    {viewingPublication.file_url.substring(0, 50)}...
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              {viewingPublication.file_url && (
+                <a href={viewingPublication.file_url} target="_blank" rel="noopener noreferrer" className="download-btn-modal">
+                  <FaDownload /> Download File
+                </a>
+              )}
+              <button
+                className="cancel-btn"
+                onClick={() => setViewingPublication(null)}
+              >
+                Close
               </button>
             </div>
           </div>
