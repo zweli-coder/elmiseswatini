@@ -22,6 +22,7 @@ import Vacancies             from './pages/Vacancies';
 import JobSeekers            from './pages/JobSeekers';
 import Publications          from './pages/Publications';
 import AdminPublications     from './pages/AdminPublications';
+import AdminPublicationsManage from './pages/AdminPublicationsManage';
 import EducationTraining     from './pages/EducationTraining';
 import AdminJobSeekerReview  from './pages/AdminJobSeekerReview';
 import AdminVacancies        from './pages/AdminVacancies';
@@ -99,6 +100,7 @@ const router = createBrowserRouter(
         { path: 'employer/vacancies/new',            element: <AdminVacancies /> },
         { path: 'employer/applications',             element: <EmployerApplications /> },
         { path: 'admin/publications',                element: <AdminPublications /> },
+        { path: 'admin/publications-manage',         element: <AdminPublicationsManage /> },
         { path: 'admin/education-training',          element: <EducationTrainingAdmin /> },
         { path: 'admin/statistics',                  element: <AdminStatistics /> },
         { path: 'admin/users',                       element: <AdminUsers /> },

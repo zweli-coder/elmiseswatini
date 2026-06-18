@@ -26,7 +26,8 @@ const pageLinks = [
   { id: 'jobseekers', path: '/admin/jobseekers-review', label: 'Job Seekers', icon: <FaUsers />, description: 'Review submitted talent' },
   { id: 'create-users', path: '/register?redirect=/admin', label: 'Create Users', icon: <FaUserPlus />, description: 'Create admin, employer, or user accounts' },
   { id: 'manage-users', path: '/admin/users', label: 'Manage Users', icon: <FaUserCog />, description: 'View, edit and delete system users' },
-  { id: 'admin-publications', path: '/admin/publications', label: 'Admin Publications', icon: <FaFileAlt />, description: 'Upload and manage publications' },
+  { id: 'admin-publications', path: '/admin/publications', label: 'Upload Publications', icon: <FaFileAlt />, description: 'Upload new publications to the system' },
+  { id: 'manage-publications', path: '/admin/publications-manage', label: 'Manage Publications', icon: <FaBook />, description: 'View, search and delete publications' },
   { id: 'training-admin', path: '/admin/education-training', label: 'Training Admin', icon: <FaTools />, description: 'Manage training resources' },
   { id: 'statistics-admin', path: '/admin/statistics', label: 'Statistics Admin', icon: <FaDatabase />, description: 'Upload statistical datasets' },
 ];
