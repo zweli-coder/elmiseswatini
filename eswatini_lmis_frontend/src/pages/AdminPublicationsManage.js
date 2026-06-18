@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINT } from '../services/api';
-import { FaBook, FaTrash, FaSpinner, FaChevronLeft, FaDownload, FaExclamationCircle, FaCheckCircle, FaEye } from 'react-icons/fa';
+import { FaBook, FaTrash, FaSpinner, FaChevronLeft, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
 import './AdminPublicationsManage.css';
 
 const AdminPublicationsManage = () => {
@@ -163,8 +163,8 @@ const AdminPublicationsManage = () => {
               <div className="card-body">
                 <p className="description">{pub.description}</p>
                 <div className="meta-info">
-                  <span className="year">📅 {pub.year}</span>
-                  <span className="type">📄 {pub.type}</span>
+                  <span className="year">{pub.year}</span>
+                  <span className="type">{pub.type}</span>
                 </div>
               </div>
 
@@ -174,19 +174,14 @@ const AdminPublicationsManage = () => {
                   onClick={() => setViewingPublication(pub)}
                   title="View publication details"
                 >
-                  <FaEye /> View
+                  View
                 </button>
-                {pub.file_url && (
-                  <a href={pub.file_url} target="_blank" rel="noopener noreferrer" className="download-link">
-                    <FaDownload /> Download
-                  </a>
-                )}
                 <button
                   className="delete-btn"
                   onClick={() => setDeleteConfirm(pub)}
                   disabled={deleting}
                 >
-                  <FaTrash /> Delete
+                  Delete
                 </button>
               </div>
             </div>
@@ -252,28 +247,15 @@ const AdminPublicationsManage = () => {
               <div className="view-field-row">
                 <div className="view-field">
                   <label>Year</label>
-                  <p className="field-value">📅 {viewingPublication.year}</p>
+                  <p className="field-value">{viewingPublication.year}</p>
                 </div>
                 <div className="view-field">
                   <label>Type</label>
-                  <p className="field-value">📄 {viewingPublication.type}</p>
+                  <p className="field-value">{viewingPublication.type}</p>
                 </div>
               </div>
-              {viewingPublication.file_url && (
-                <div className="view-field">
-                  <label>File URL</label>
-                  <a href={viewingPublication.file_url} target="_blank" rel="noopener noreferrer" className="file-link">
-                    {viewingPublication.file_url.substring(0, 50)}...
-                  </a>
-                </div>
-              )}
             </div>
             <div className="modal-footer">
-              {viewingPublication.file_url && (
-                <a href={viewingPublication.file_url} target="_blank" rel="noopener noreferrer" className="download-btn-modal">
-                  <FaDownload /> Download File
-                </a>
-              )}
               <button
                 className="cancel-btn"
                 onClick={() => setViewingPublication(null)}
