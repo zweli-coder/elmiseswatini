@@ -51,6 +51,7 @@ const Publication = () => {
   const [deleting, setDeleting] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfLoadError, setPdfLoadError] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -163,8 +164,12 @@ const Publication = () => {
         if (Array.isArray(data)) {
           const mappedData = data.map((item) => {
             const type = normalizePublicationType(item.type, item.category);
+            // Preserve file_path or file_url from API response
+            const filePath = item.file_path || item.file_url || '';
             return {
               ...item,
+              file_path: filePath,
+              file_url: filePath,
               area: item.category || "General",
               topic: item.category || "Report",
               type,
@@ -238,10 +243,13 @@ const Publication = () => {
 
   // OPEN PDF
   const handleDocClick = (doc) => {
+    const filePath = doc.file_path || doc.file_url || '';
     setSelectedDoc({
       ...doc,
-      file_url: constructFileUrl(doc.file_path),
+      file_path: filePath,
+      file_url: constructFileUrl(filePath),
     });
+    setPdfLoadError(false);
     setShowPdfModal(true);
     document.body.style.overflow = "hidden";
   };
@@ -250,6 +258,7 @@ const Publication = () => {
   const closeModal = () => {
     setShowPdfModal(false);
     setSelectedDoc(null);
+    setPdfLoadError(false);
     document.body.style.overflow = "auto";
   };
 
@@ -830,11 +839,47 @@ const Publication = () => {
               <div style={styles.pdfHeader}>
                 <h3 style={styles.pdfTitle}>{selectedDoc.title}</h3>
                 <div style={styles.pdfActions}>
-                  <a href={constructFileUrl(selectedDoc.file_path)} download target="_blank" rel="noreferrer" style={styles.downloadBtn}>Download</a>
+                  <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer" style={styles.downloadBtn}>Download</a>
                   <button style={styles.closeBtn} onClick={closeModal}><FaClose /></button>
                 </div>
               </div>
-              <iframe src={constructFileUrl(selectedDoc.file_path)} title={selectedDoc.title} style={styles.pdfFrame} />
+              {pdfLoadError ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  flexDirection: 'column',
+                  gap: '20px',
+                  color: '#d32f2f'
+                }}>
+                  <FaExclamationCircle size={48} />
+                  <div style={{ textAlign: 'center' }}>
+                    <p><strong>Unable to load PDF preview</strong></p>
+                    <p style={{ fontSize: '14px', marginTop: '10px' }}>
+                      The file may not be available or is corrupted. Please try downloading it instead.
+                    </p>
+                    <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer" style={{
+                      display: 'inline-block',
+                      marginTop: '15px',
+                      padding: '10px 20px',
+                      backgroundColor: '#1976d2',
+                      color: 'white',
+                      borderRadius: '4px',
+                      textDecoration: 'none'
+                    }}>
+                      Download File
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <iframe 
+                  src={selectedDoc.file_url} 
+                  title={selectedDoc.title} 
+                  style={styles.pdfFrame}
+                  onError={() => setPdfLoadError(true)}
+                />
+              )}
             </div>
           </div>
         )}

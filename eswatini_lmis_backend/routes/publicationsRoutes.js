@@ -84,6 +84,11 @@ router.get('/', async (req, res) => {
         ...pub,
         file_url: storedPath
       };
+    }).filter(pub => {
+      // Only include publications where the file actually exists
+      if (!pub.file_url) return false;
+      const filePath = path.join(uploadDirectory, path.basename(pub.file_url));
+      return fs.existsSync(filePath);
     });
 
     if (publications.length === 0) {
@@ -107,22 +112,36 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
+    // First try to find in database by numeric ID
     const result = await pool.query(
       `SELECT * FROM publications WHERE id = $1`,
       [id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Publication not found' });
+    if (result.rows.length > 0) {
+      const storedPath = result.rows[0].file_path || result.rows[0].file_url;
+      // Verify file exists before returning
+      if (storedPath) {
+        const filePath = path.join(uploadDirectory, path.basename(storedPath));
+        if (fs.existsSync(filePath)) {
+          const publication = {
+            ...result.rows[0],
+            file_url: storedPath
+          };
+          return res.json(publication);
+        }
+      }
     }
 
-    const storedPath = result.rows[0].file_path || result.rows[0].file_url;
-    const publication = {
-      ...result.rows[0],
-      file_url: storedPath
-    };
+    // If not found, check if it's a filename from uploads directory
+    const uploadPath = path.join(uploadDirectory, id);
+    if (fs.existsSync(uploadPath)) {
+      const publication = buildPublicationFromFile(id);
+      return res.json(publication);
+    }
 
-    res.json(publication);
+    // Not found anywhere
+    return res.status(404).json({ error: 'Publication not found' });
 
   } catch (err) {
     console.error('GET publication error:', err);
