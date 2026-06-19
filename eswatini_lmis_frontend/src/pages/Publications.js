@@ -14,6 +14,13 @@ import {
 } from 'react-icons/fa';
 import PageLoader from '../components/common/PageLoader';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+
+const constructFileUrl = (relativeUrl) => {
+  if (!relativeUrl) return '';
+  const backendBase = API_BASE_URL.replace('/api', '');
+  return `${backendBase}${relativeUrl}`;
+};
 // ---------------------------------------------------------------------------
 // Custom hook: closes the menu when a click occurs outside the given ref(s)
 // ---------------------------------------------------------------------------
@@ -39,7 +46,6 @@ const Publication = () => {
 
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [viewingPublication, setViewingPublication] = useState(null);
-  const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -117,10 +123,11 @@ const Publication = () => {
 
   const getPublicationTypeColor = (doc) => {
     const type = doc.type;
-    if (type === 'Laws') return 'linear-gradient(135deg, #1e3a5f, #2d5986)';
-    if (type === 'Policies') return 'linear-gradient(135deg, #1b4332, #2d6a4f)';
-    if (type === 'Questionnaires') return 'linear-gradient(135deg, #7c3a1e, #b4532e)';
-    return 'linear-gradient(135deg, #3b1f3b, #5b2d5b)';
+    // Category-specific colors: Light Red, Light Green, Light Blue, Yellow
+    if (type === 'Laws') return '#ffe5e5';
+    if (type === 'Policies') return '#e8f5e9';
+    if (type === 'Reports') return '#e0f2ff';
+    return '#fff9c4'; // Questionnaires & others
   };
 
   // Check admin status on component mount
@@ -128,12 +135,7 @@ const Publication = () => {
     const token = localStorage.getItem('lmis_token');
     if (token) {
       const payload = decodeToken(token);
-      if (payload && payload.role_id === 1) {
-        setUser(payload);
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(payload && payload.role_id === 1);
     } else {
       setIsAdmin(false);
     }
@@ -236,7 +238,10 @@ const Publication = () => {
 
   // OPEN PDF
   const handleDocClick = (doc) => {
-    setSelectedDoc(doc);
+    setSelectedDoc({
+      ...doc,
+      file_url: constructFileUrl(doc.file_path),
+    });
     setShowPdfModal(true);
     document.body.style.overflow = "hidden";
   };
@@ -381,7 +386,7 @@ const Publication = () => {
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             border: 2px solid transparent;
             cursor: pointer;
-            color: #ffffff;
+            color: #1e293b;
           }
 
           .publication-card::before {
@@ -401,9 +406,13 @@ const Publication = () => {
             content: '';
             position: absolute;
             inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
-            mix-blend-mode: overlay;
-            opacity: 0.20;
+            background: linear-gradient(
+              135deg, 
+              rgba(255, 255, 255, 0.5) 0%, 
+              rgba(255, 255, 255, 0) 100%
+            ), 
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+            opacity: 1;
             z-index: 1;
             pointer-events: none;
           }
@@ -418,7 +427,7 @@ const Publication = () => {
             transform: translateY(-10px) scale(1.02);
             box-shadow: 0 20px 40px rgba(52,152,219,0.25);
             border-color: #3498db;
-            background: linear-gradient(135deg, #f0f8ff 0%, #e3f2fd 100%);
+            filter: brightness(1.05);
           }
 
           .publication-card:hover::before {
@@ -718,7 +727,7 @@ const Publication = () => {
               <div
                 key={doc.id}
                 className="publication-card"
-                style={{ ...styles.docCard, backgroundImage: getPublicationTypeColor(doc) }}
+                style={{ ...styles.docCard, backgroundColor: getPublicationTypeColor(doc) }}
                 onClick={() => handleDocClick(doc)}
               >
                 <div style={styles.docYear}>{doc.year}</div>
@@ -732,19 +741,6 @@ const Publication = () => {
                 <div style={styles.docType}>
                   <span className="reportBadge" style={styles.reportBadge}>{doc.category}</span>
                   <span style={styles.docSize}>{doc.size}</span>
-                </div>
-                <div className="publication-actions">
-                  <button className="btn btn-view" onClick={(e) => { e.stopPropagation(); handleViewDetails(doc); }}>
-                    <FaEye /><span style={{ marginLeft: 6 }}>View</span>
-                  </button>
-                  <a href={doc.file_url} target="_blank" rel="noreferrer" className="btn btn-download" onClick={(e) => e.stopPropagation()}>
-                    <FaFilePdf /><span style={{ marginLeft: 6 }}>Download</span>
-                  </a>
-                  {isAdmin && (
-                    <button className="btn btn-delete" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(doc); }} disabled={deleting}>
-                      <FaTrash /><span style={{ marginLeft: 6 }}>Delete</span>
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
@@ -834,11 +830,11 @@ const Publication = () => {
               <div style={styles.pdfHeader}>
                 <h3 style={styles.pdfTitle}>{selectedDoc.title}</h3>
                 <div style={styles.pdfActions}>
-                  <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer" style={styles.downloadBtn}>Download</a>
+                  <a href={constructFileUrl(selectedDoc.file_path)} download target="_blank" rel="noreferrer" style={styles.downloadBtn}>Download</a>
                   <button style={styles.closeBtn} onClick={closeModal}><FaClose /></button>
                 </div>
               </div>
-              <iframe src={selectedDoc.file_url} title={selectedDoc.title} style={styles.pdfFrame} />
+              <iframe src={constructFileUrl(selectedDoc.file_path)} title={selectedDoc.title} style={styles.pdfFrame} />
             </div>
           </div>
         )}
@@ -1038,11 +1034,9 @@ const styles = {
     position: 'relative',
     overflow: 'hidden',
     transition: 'transform 0.4s ease, box-shadow 0.3s ease',
-    color: '#ffffff',
-    minHeight: '320px',
-    zIndex: 2,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center'
+    color: '#1e293b',
+    minHeight: '280px',
+    zIndex: 2
   },
 
   docYear: {
@@ -1060,7 +1054,7 @@ const styles = {
 
   docTitle: {
     marginTop: '140px',
-    color: '#ffffff',
+    color: '#0f172a',
     zIndex: 2,
     position: 'relative'
   },
@@ -1075,7 +1069,7 @@ const styles = {
   },
 
   docDesc: {
-    color: '#f8f9fa',
+    color: '#475569',
     fontSize: '14px',
     zIndex: 2,
     position: 'relative'
