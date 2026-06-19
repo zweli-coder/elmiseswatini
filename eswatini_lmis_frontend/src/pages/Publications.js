@@ -252,6 +252,14 @@ const Publication = () => {
     setPdfLoadError(false);
     setShowPdfModal(true);
     document.body.style.overflow = "hidden";
+    
+    // Set a timeout to detect if iframe fails to load (404 or network errors)
+    const timer = setTimeout(() => {
+      setPdfLoadError(true);
+    }, 5000);
+    
+    // Store timer ID so we can clear it if iframe loads successfully
+    window._pdfLoadTimer = timer;
   };
 
   // CLOSE PDF
@@ -260,6 +268,11 @@ const Publication = () => {
     setSelectedDoc(null);
     setPdfLoadError(false);
     document.body.style.overflow = "auto";
+    // Clear any pending timer
+    if (window._pdfLoadTimer) {
+      clearTimeout(window._pdfLoadTimer);
+      window._pdfLoadTimer = null;
+    }
   };
 
   // OPEN VIEW MODAL
@@ -877,6 +890,13 @@ const Publication = () => {
                   src={selectedDoc.file_url} 
                   title={selectedDoc.title} 
                   style={styles.pdfFrame}
+                  onLoad={() => {
+                    // Clear timeout if iframe loads successfully
+                    if (window._pdfLoadTimer) {
+                      clearTimeout(window._pdfLoadTimer);
+                      window._pdfLoadTimer = null;
+                    }
+                  }}
                   onError={() => setPdfLoadError(true)}
                 />
               )}
