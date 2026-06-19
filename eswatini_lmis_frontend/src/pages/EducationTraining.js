@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { API_ENDPOINT } from '../services/api';
 import heroImage from '../assets/education.jpg';
 import PageLoader from '../components/common/PageLoader';
 import { FaSearch, FaFilter, FaExternalLinkAlt } from 'react-icons/fa';
+
+const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 const getEducationImage = (category, title) => {
     const search = ((category || "") + " " + (title || "")).toLowerCase();

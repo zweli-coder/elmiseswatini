@@ -123,12 +123,19 @@ const Publication = () => {
   };
 
   const getPublicationTypeColor = (doc) => {
-    const type = doc.type;
-    // Category-specific colors: Light Red, Light Green, Light Blue, Yellow
-    if (type === 'Laws') return '#ffe5e5';
-    if (type === 'Policies') return '#e8f5e9';
-    if (type === 'Reports') return '#e0f2ff';
-    return '#fff9c4'; // Questionnaires & others
+    const category = (doc.category || doc.type || '').toLowerCase();
+    // Color by category - consistent colors for each category type
+    if (category.includes('law') || category.includes('act') || category.includes('regulation')) {
+      return { bg: '#ffcccc', overlay: 'rgba(255, 0, 0, 0.08)', accent: '#dc2626' };
+    }
+    if (category.includes('policy')) {
+      return { bg: '#ccffcc', overlay: 'rgba(34, 197, 94, 0.08)', accent: '#16a34a' };
+    }
+    if (category.includes('questionnaire') || category.includes('survey')) {
+      return { bg: '#ffffcc', overlay: 'rgba(234, 179, 8, 0.08)', accent: '#eab308' };
+    }
+    // Default: light blue for reports
+    return { bg: '#cce5ff', overlay: 'rgba(59, 130, 246, 0.08)', accent: '#2563eb' };
   };
 
   // Check admin status on component mount
@@ -749,10 +756,14 @@ const Publication = () => {
               <div
                 key={doc.id}
                 className="publication-card"
-                style={{ ...styles.docCard, backgroundColor: getPublicationTypeColor(doc) }}
+                style={{ 
+                  ...styles.docCard, 
+                  backgroundColor: getPublicationTypeColor(doc).bg,
+                  backgroundImage: `linear-gradient(135deg, ${getPublicationTypeColor(doc).overlay} 0%, rgba(255,255,255,0.3) 100%)`
+                }}
                 onClick={() => handleDocClick(doc)}
               >
-                <div style={styles.docYear}>{doc.year}</div>
+                <div style={{...styles.docYear, borderColor: getPublicationTypeColor(doc).accent}}>{doc.year}</div>
                 {getDocStatus(doc) && (
                   <span className={`publication-status ${getDocStatus(doc).toLowerCase()}`} style={styles.statusBadge}>
                     {getDocStatus(doc)}
@@ -961,36 +972,46 @@ const styles = {
   },
 
   filterBox: {
-    backgroundColor: '#fff',
-    borderRadius: '16px',
-    padding: '28px 30px',
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    borderRadius: '20px',
+    padding: '32px 36px',
     marginBottom: '30px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-    border: '1px solid rgba(0,0,0,0.03)'
+    boxShadow: '0 8px 32px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)',
+    border: '1px solid rgba(59, 130, 246, 0.1)',
+    backdrop: 'blur(10px)'
   },
 
   filterHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px'
+    marginBottom: '24px',
+    paddingBottom: '16px',
+    borderBottom: '2px solid rgba(59, 130, 246, 0.1)'
   },
 
   filterTitle: {
-    fontWeight: '700',
-    fontSize: '16px',
-    color: '#0f172a'
+    fontWeight: '800',
+    fontSize: '18px',
+    background: 'linear-gradient(135deg, #1e40af 0%, #7c3aed 100%)',
+    backgroundClip: 'text',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    letterSpacing: '-0.01em'
   },
 
   clearAllBtn: {
-    backgroundColor: '#ef4444',
+    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     color: '#fff',
     border: 'none',
-    padding: '8px 16px',
-    borderRadius: '8px',
+    padding: '10px 18px',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontSize: '13px',
-    fontWeight: '600'
+    fontWeight: '700',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+    letterSpacing: '0.02em'
   },
 
   filterGrid: {
@@ -1006,23 +1027,28 @@ const styles = {
   },
 
   filterLabel: {
-    fontWeight: '600',
-    fontSize: '13px',
-    color: '#475569'
+    fontWeight: '700',
+    fontSize: '12px',
+    color: '#334155',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: '4px'
   },
 
   dropdownButton: {
-    backgroundColor: '#fff',
-    border: '1px solid #e2e8f0',
-    padding: '12px 14px',
-    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+    border: '2px solid #e2e8f0',
+    padding: '13px 16px',
+    borderRadius: '12px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     cursor: 'pointer',
     fontSize: '14px',
     color: '#1e293b',
-    transition: 'border-color 0.2s, box-shadow 0.2s'
+    fontWeight: '600',
+    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
   },
 
   searchSection: {
@@ -1093,28 +1119,32 @@ const styles = {
   },
 
   docCard: {
-    padding: '25px',
-    borderRadius: '24px',
+    padding: '28px',
+    borderRadius: '20px',
     cursor: 'pointer',
     position: 'relative',
     overflow: 'hidden',
-    transition: 'transform 0.4s ease, box-shadow 0.3s ease',
+    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
     color: '#1e293b',
-    minHeight: '280px',
-    zIndex: 2
+    minHeight: '320px',
+    zIndex: 2,
+    border: '2px solid rgba(255,255,255,0.6)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)'
   },
 
   docYear: {
     position: 'absolute',
     top: '20px',
     right: '20px',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#ffffff',
     zIndex: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontWeight: '600'
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    padding: '8px 14px',
+    borderRadius: '99px',
+    fontWeight: '800',
+    border: '2px solid currentColor',
+    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
   },
 
   docTitle: {
@@ -1540,5 +1570,87 @@ const styles = {
     marginRight: 8
   }
 };
+
+// Global CSS Styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .publication-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 1px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .publication-card:hover::before {
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+  }
+
+  .dropdownButton:hover,
+  .dropdownButton:focus {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  .clearAllBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4) !important;
+  }
+
+  .dropdownMenu {
+    animation: slideDown 0.2s ease-out;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  .dropdownMenu div:hover {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2ff 100%);
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .searchInput:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  }
+
+  @media (max-width: 768px) {
+    .publication-card:hover {
+      transform: translateY(-8px) scale(1.01);
+    }
+  }
+`;
+
+if (document.head) {
+  document.head.appendChild(styleSheet);
+}
 
 export default Publication;

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { API_ENDPOINT } from '../services/api';
 import { FaBook, FaCheckCircle, FaExclamationCircle, FaChevronLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+
+const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 const AdminPublications = () => {
   const navigate = useNavigate();

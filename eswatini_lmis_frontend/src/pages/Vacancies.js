@@ -4,8 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import heroImage from "../assets/vacanyy.jpg";
-import { useNavigate, useLocation } from "react-router-dom";
-import { API_ENDPOINT } from "../services/api";
+import { useNavigate, useLocation } from 'react-router-dom';
 import API from "../services/api";
 import {
   FaSearch,
@@ -18,6 +17,8 @@ import {
   FaChevronRight,
   FaSpinner
 } from "react-icons/fa";
+
+const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 export default function Vacancies() {
 

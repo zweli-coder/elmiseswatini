@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link } from 'react-router-dom';
-import { API_ENDPOINT } from '../services/api';
 import statisticsHero from '../assets/stats.png';
 import { 
   FaSearch, FaTable, FaChartBar, FaDatabase, FaChevronDown, FaCalendarAlt,
@@ -12,6 +11,8 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, 
   LineElement, RadialLinearScale, ArcElement, Title, Tooltip, Legend
 } from "chart.js";
+
+const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, PointElement, 
