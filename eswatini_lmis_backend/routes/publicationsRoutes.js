@@ -84,11 +84,6 @@ router.get('/', async (req, res) => {
         ...pub,
         file_url: storedPath
       };
-    }).filter(pub => {
-      // Only include publications where the file actually exists
-      if (!pub.file_url) return false;
-      const filePath = path.join(uploadDirectory, path.basename(pub.file_url));
-      return fs.existsSync(filePath);
     });
 
     if (publications.length === 0) {
@@ -120,17 +115,11 @@ router.get('/:id', async (req, res) => {
 
     if (result.rows.length > 0) {
       const storedPath = result.rows[0].file_path || result.rows[0].file_url;
-      // Verify file exists before returning
-      if (storedPath) {
-        const filePath = path.join(uploadDirectory, path.basename(storedPath));
-        if (fs.existsSync(filePath)) {
-          const publication = {
-            ...result.rows[0],
-            file_url: storedPath
-          };
-          return res.json(publication);
-        }
-      }
+      const publication = {
+        ...result.rows[0],
+        file_url: storedPath
+      };
+      return res.json(publication);
     }
 
     // If not found, check if it's a filename from uploads directory
