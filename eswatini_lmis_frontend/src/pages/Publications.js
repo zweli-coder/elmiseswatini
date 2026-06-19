@@ -195,6 +195,80 @@ const Publication = () => {
     loadPublications();
   }, []);
 
+  // Add global CSS for hover effects and animations
+  useEffect(() => {
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .publication-card:hover {
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 1px 20px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .publication-card:hover::before {
+        background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+      }
+
+      .dropdownButton:hover,
+      .dropdownButton:focus {
+        border-color: #3b82f6 !important;
+        background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+      }
+
+      .clearAllBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4) !important;
+      }
+
+      .dropdownMenu {
+        animation: slideDown 0.2s ease-out;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .dropdownMenu div:hover {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2ff 100%);
+        color: #3b82f6;
+        font-weight: 600;
+      }
+
+      .searchInput:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+      }
+
+      @media (max-width: 768px) {
+        .publication-card:hover {
+          transform: translateY(-8px) scale(1.01);
+        }
+      }
+    `;
+    
+    document.head.appendChild(styleSheet);
+    
+    return () => {
+      try {
+        document.head.removeChild(styleSheet);
+      } catch (e) {}
+    };
+  }, []);
+
   // AUTO FILTER DATA
   const areas = [...new Set(publications.map(doc => doc.area))];
   const topics = [...new Set(publications.map(doc => doc.topic))];
@@ -1570,87 +1644,5 @@ const styles = {
     marginRight: 8
   }
 };
-
-// Global CSS Styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .publication-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 1px 20px rgba(0, 0, 0, 0.1) !important;
-  }
-
-  .publication-card:hover::before {
-    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
-  }
-
-  .dropdownButton:hover,
-  .dropdownButton:focus {
-    border-color: #3b82f6 !important;
-    background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%) !important;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
-  }
-
-  .clearAllBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4) !important;
-  }
-
-  .dropdownMenu {
-    animation: slideDown 0.2s ease-out;
-    border: 2px solid #e2e8f0;
-    border-radius: 14px;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  }
-
-  .dropdownMenu div:hover {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2ff 100%);
-    color: #3b82f6;
-    font-weight: 600;
-  }
-
-  .searchInput:focus {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  }
-
-  @media (max-width: 768px) {
-    .publication-card:hover {
-      transform: translateY(-8px) scale(1.01);
-    }
-  }
-`;
-
-if (document.head) {
-  document.head.appendChild(styleSheet);
-}
 
 export default Publication;
