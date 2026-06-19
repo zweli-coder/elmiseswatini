@@ -90,6 +90,26 @@ router.get('/', async (req, res) => {
       publications = getPublicationsFromUploads();
     }
 
+    // Clean up orphaned records in the background (files that don't exist)
+    // This runs async and doesn't block the response
+    (async () => {
+      try {
+        for (const pub of result.rows) {
+          const filePath = pub.file_path || pub.file_url;
+          if (filePath) {
+            const fullPath = path.join(uploadDirectory, path.basename(filePath));
+            if (!fs.existsSync(fullPath)) {
+              // File doesn't exist, delete the record
+              await pool.query(`DELETE FROM publications WHERE id = $1`, [pub.id]);
+              console.log(`Cleaned up orphaned record: ${pub.title} (ID: ${pub.id})`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error cleaning up orphaned records:', err);
+      }
+    })();
+
     res.json(publications);
 
   } catch (err) {
