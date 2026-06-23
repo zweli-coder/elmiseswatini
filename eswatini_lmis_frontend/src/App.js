@@ -44,8 +44,8 @@ const Layout = () => {
   const [loading, setLoading] = React.useState(true);
   const location = useLocation();
 
-  useEffect(() => {
-  console.log("API BASE =", process.env.REACT_APP_API_BASE);
+useEffect(() => {
+  console.log("API URL =", process.env.REACT_APP_API_URL);
 }, []);
 
   React.useEffect(() => {
