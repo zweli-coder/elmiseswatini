@@ -183,6 +183,7 @@ const Publication = () => {
               size: item.file_type ? `${item.file_type.toUpperCase()}` : "PDF"
             };
           });
+          console.log("PUBLICATIONS FROM API:", mappedData);
           setPublications(mappedData);
         }
       } catch (error) {
@@ -287,6 +288,7 @@ const Publication = () => {
     if (!year || Number.isNaN(year)) return null;
     if (year === latestYear) return 'New';
     if (year === secondLatestYear) return 'Updated';
+    console.log("CHECKING DOC:", doc.title);
     return null;
   };
 
@@ -321,6 +323,7 @@ const Publication = () => {
       matchesSearch
     );
   });
+  console.log("PUBLICATIONS STATE:", publications);
 
   // OPEN PDF
   const handleDocClick = (doc) => {
