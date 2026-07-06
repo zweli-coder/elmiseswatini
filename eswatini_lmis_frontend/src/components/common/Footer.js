@@ -41,12 +41,12 @@ const Footer = () => {
       ],
     },
     {
-      heading: 'Resources',
+      heading: 'Publications',
       links: [
-        { to: '/resources', label: 'Reports & Data'    },
+        { to: '/publications', label: 'Reports & Data'    },
         { to: '/statistics',   label: 'Labour Indicators' },
         { to: '/api-docs',     label: 'API Documentation' },
-        { to: '/resources',    label: 'Open Data Portal'  },
+        { to: '/publications', label: 'Open Data Portal'  },
         { href: 'mailto:lmis@gov.sz',  label: 'Enquiries'         },
         { href: '#',           label: 'About Us'          },
       ],
