@@ -8,8 +8,8 @@ import {
   FaChevronRight,
   FaExclamationCircle
 } from 'react-icons/fa';
+import { API_ENDPOINT } from '../services/api';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 const authHeader = (token) => {
   if (!token) return {};
@@ -49,7 +49,7 @@ const EmployerApplications = () => {
       setError(null);
       try {
         const token = localStorage.getItem('lmis_token');
-        const res = await fetch(`${API_BASE}/employers/jobs`, {
+        const res = await fetch(`${API_ENDPOINT}/employers/jobs`, {
           headers: authHeader(token)
         });
         if (!res.ok) {
@@ -86,7 +86,7 @@ const EmployerApplications = () => {
 
     try {
       const token = localStorage.getItem('lmis_token');
-      const res = await fetch(`${API_BASE}/employers/jobs/${job.id}/applications`, {
+      const res = await fetch(`${API_ENDPOINT}/employers/jobs/${job.id}/applications`, {
         headers: authHeader(token)
       });
       if (!res.ok) {
@@ -109,7 +109,7 @@ const EmployerApplications = () => {
 
     try {
       const token = localStorage.getItem('lmis_token');
-      const res = await fetch(`${API_BASE}/employers/applications/${applicationId}`, {
+      const res = await fetch(`${API_ENDPOINT}/employers/applications/${applicationId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

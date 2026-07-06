@@ -11,11 +11,9 @@ import {
   FaFacebookF, 
   FaInstagram, 
   FaLinkedinIn, 
-  FaYoutube,
   FaMapMarkerAlt,
   FaPhoneAlt,
-  FaEnvelope,
-  FaFax
+  FaEnvelope
 } from 'react-icons/fa';
 
 /**
@@ -45,10 +43,10 @@ const Footer = () => {
       links: [
         { to: '/publications', label: 'Reports & Data'    },
         { to: '/statistics',   label: 'Labour Indicators' },
-        { href: '#',           label: 'API Documentation' },
-        { href: '#',           label: 'Open Data Portal'  },
-        { href: '#',           label: 'Enquiries'         },
-        { href: '#',           label: 'About Us'          },
+        { to: '/api-docs',     label: 'API Documentation' },
+        { to: '/publications', label: 'Open Data Portal'  },
+        { href: 'mailto:lmis@gov.sz',  label: 'Enquiries'         },
+        { to: '/about',        label: 'About Us'          },
       ],
     },
   ];
@@ -133,10 +131,10 @@ const Footer = () => {
           <div className="footer-column social-integration">
             <h4 className="footer-heading">Follow Us</h4>
             <div className="footer-social-grid">
-              <a href="#" className="social-icon-btn"><FaTwitter /></a>
-              <a href="#" className="social-icon-btn"><FaFacebookF /></a>
-              <a href="#" className="social-icon-btn"><FaInstagram /></a>
-              <a href="#" className="social-icon-btn"><FaLinkedinIn /></a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="Twitter"><FaTwitter /></a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="Facebook"><FaFacebookF /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="Instagram"><FaInstagram /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="LinkedIn"><FaLinkedinIn /></a>
             </div>
           </div>
 

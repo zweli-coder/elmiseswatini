@@ -24,7 +24,11 @@ services:
       dockerfile: Dockerfile
     container_name: lmis_backend
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-lmis}
+      DB_HOST: db
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-lmis}
+      DB_PORT: 5432
       JWT_SECRET: ${JWT_SECRET:-lmis_secret_key_2026}
       NODE_ENV: ${NODE_ENV:-production}
     ports:

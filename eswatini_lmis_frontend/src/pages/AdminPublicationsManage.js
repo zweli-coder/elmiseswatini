@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaBook, FaTrash, FaSpinner, FaChevronLeft, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
 import './AdminPublicationsManage.css';
-
-const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { API_ENDPOINT } from '../services/api';
 
 const AdminPublicationsManage = () => {
   const navigate = useNavigate();
@@ -90,6 +89,18 @@ const AdminPublicationsManage = () => {
   // Get unique categories
   const categories = [...new Set(publications.map(p => p.category))];
 
+  // Helper to get the CSS class based on category for color-coding
+  const getCategoryClass = (category) => {
+    if (!category) return '';
+    const cat = category.toLowerCase();
+    if (cat.includes('report')) return 'category-report';
+    if (cat.includes('law') || cat.includes('act')) return 'category-law';
+    if (cat.includes('policy')) return 'category-policy';
+    if (cat.includes('survey') || cat.includes('questionnaire')) return 'category-survey';
+    return ''; // Default class if no match
+  };
+
+
   return (
     <div className="admin-publications-manage">
       {/* Header */}
@@ -155,7 +166,7 @@ const AdminPublicationsManage = () => {
       ) : (
         <div className="publications-grid">
           {filteredPublications.map(pub => (
-            <div key={pub.id} className="publication-card">
+            <div key={pub.id} className={`publication-card ${getCategoryClass(pub.category)}`}>
               <div className="card-header">
                 <h3>{pub.title}</h3>
                 <span className="category-badge">{pub.category}</span>

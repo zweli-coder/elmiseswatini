@@ -48,8 +48,16 @@ app.use(cors({
     origin: [
         'https://elmis-eswatini-qzwo.onrender.com', // Production frontend
         'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://192.168.100.169:3000' // Development network access
+        'http://localhost:3001',
+        'http://localhost:3002', // Frontend dev server
+        'http://localhost:3003', // Allow the new frontend port
+        'http://127.0.0.1:3000', // Keep for legacy
+        'http://127.0.0.1:3001', // Backend API access
+        'http://127.0.0.1:3002', // Frontend dev server
+        'http://192.168.100.169:3000', // Development network access (old IP)
+        'http://192.168.100.169:3001', // Development network access (old IP)
+        'http://192.168.100.214:3000', // Your network IP - Frontend
+        'http://192.168.100.214:3001'  // Your network IP - Backend API
     ],
     credentials: true
 }));

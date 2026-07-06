@@ -11,7 +11,8 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Scatter } from 'react-chartjs-2';
-import { FaChartLine, FaDownload, FaSpinner, FaCalendarAlt, FaIndustry } from 'react-icons/fa';
+import { FaDownload, FaSpinner, FaCalendarAlt, FaIndustry } from 'react-icons/fa';
+import { API_ENDPOINT } from '../services/api';
 
 ChartJS.register(
   CategoryScale,
@@ -23,8 +24,6 @@ ChartJS.register(
   Legend,
   Filler
 );
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 // Professional color palettes
 const INDUSTRY_COLORS = {
@@ -529,11 +528,11 @@ const AdvancedAnalytics = () => {
         let token = localStorage.getItem('lmis_token') || '';
         let headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         
-        let response = await fetch(`${API_BASE}/admin/applications`, { headers });
+        let response = await fetch(`${API_ENDPOINT}/admin/applications`, { headers });
         
         // If forbidden, try without auth (for demo purposes)
         if (response.status === 403 || response.status === 401) {
-          response = await fetch(`${API_BASE}/employers/applications`, { headers });
+          response = await fetch(`${API_ENDPOINT}/employers/applications`, { headers });
         }
 
         if (!response.ok) {

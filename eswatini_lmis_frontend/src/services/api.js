@@ -13,8 +13,8 @@ const getAPIBaseURL = () => {
     return process.env.REACT_APP_API_BASE;
   }
 
-  // Fallback for production (without /api - endpoints will add it)
-  const defaultURL = 'https://elmiseswatini-backend.onrender.com';
+  // Fallback for local development
+  const defaultURL = 'http://localhost:3001';
   console.log('Using fallback API URL:', defaultURL);
   return defaultURL;
 
@@ -24,8 +24,13 @@ const getAPIBaseURL = () => {
 
 // Export for fetch() calls throughout the app
 // Use /api prefix when building endpoint URLs
-export const API_BASE = getAPIBaseURL();
-export const API_ENDPOINT = `${API_BASE}/api`;
+const API_BASE_URL = getAPIBaseURL();
+
+// FIX: Ensure API_ENDPOINT has exactly one '/api' suffix.
+// This handles cases where REACT_APP_API_URL might or might not include it.
+export const API_ENDPOINT = API_BASE_URL.endsWith('/api')
+  ? API_BASE_URL
+  : `${API_BASE_URL}/api`;
 
 // Axios instance
 const API = axios.create({

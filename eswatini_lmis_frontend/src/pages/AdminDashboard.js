@@ -1,15 +1,9 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../services/api';
-import {
-  FaHome,
-  FaIndustry,
-  FaChartBar,
-  FaBriefcase,
+import { API_ENDPOINT } from '../services/api';
+import {  
   FaUsers,
   FaBook,
-  FaLightbulb,
-  FaGraduationCap,
   FaFileAlt,
   FaTools,
   FaUserPlus,
@@ -17,14 +11,11 @@ import {
   FaSpinner,
   FaSignOutAlt,
   FaDatabase,
-  FaClipboardList
 } from 'react-icons/fa';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
 
 const pageLinks = [
   { id: 'jobseekers', path: '/admin/jobseekers-review', label: 'Job Seekers', icon: <FaUsers />, description: 'Review submitted talent' },
-  { id: 'create-users', path: '/register?redirect=/admin', label: 'Create Users', icon: <FaUserPlus />, description: 'Create admin, employer, or user accounts' },
+  { id: 'create-users', path: '/register?redirect=/', label: 'Create Users', icon: <FaUserPlus />, description: 'Create employer or job seeker accounts' },
   { id: 'manage-users', path: '/admin/users', label: 'Manage Users', icon: <FaUserCog />, description: 'View, edit and delete system users' },
   { id: 'admin-publications', path: '/admin/publications', label: 'Upload Publications', icon: <FaFileAlt />, description: 'Upload new publications to the system' },
   { id: 'manage-publications', path: '/admin/publications-manage', label: 'Manage Publications', icon: <FaBook />, description: 'View, search and delete publications' },
@@ -62,10 +53,8 @@ const AdminDashboard = () => {
   // Job seeker review states
   const [activePanel, setActivePanel] = useState(null);
   const [jobSeekers, setJobSeekers] = useState([]);
-  const [loadingJobSeekers, setLoadingJobSeekers] = useState(false);
-  const [jobSeekersError, setJobSeekersError] = useState(null);
-
-  const adminRedirect = '/admin';
+  const [loadingJobSeekers] = useState(false);
+  const [jobSeekersError] = useState(null);
 
   // ── Auth check ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -103,7 +92,7 @@ const AdminDashboard = () => {
     }
 
     // Fallback: verify via /api/auth/me
-    fetch(`${API_BASE}/auth/me`, { headers: authHeader(token) })
+    fetch(`${API_ENDPOINT}/auth/me`, { headers: authHeader(token) })
       .then((res) => {
         if (res.status === 401 || res.status === 403) {
           localStorage.removeItem('lmis_token');
@@ -125,7 +114,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (authStatus !== 'ok' || !token) return;
 
-    fetch(`${API_BASE}/admin/stats`, { headers: authHeader(token) })
+    fetch(`${API_ENDPOINT}/admin/stats`, { headers: authHeader(token) })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load stats');
         return res.json();
@@ -148,24 +137,6 @@ const AdminDashboard = () => {
       seeker.region &&
       seeker.description
     );
-
-  const loadJobSeekers = async () => {
-    setActivePanel('jobseekers');
-    setLoadingJobSeekers(true);
-    setJobSeekersError(null);
-
-    try {
-      const res = await API.get('/employees');
-      setJobSeekers(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      setJobSeekersError(
-        err?.response?.data?.error || err.message || 'Unable to load job seekers'
-      );
-    } finally {
-      setLoadingJobSeekers(false);
-    }
-  };
-
 
   // FIX: single, correctly scoped definition (was duplicated / misplaced before)
   const handleJobSeekerDecision = (id, decision) => {
@@ -197,14 +168,8 @@ const AdminDashboard = () => {
           <p style={styles.description}>Admin credentials are required to access this page.</p>
         </div>
         <div style={styles.authActions}>
-          <Link to={`/login?redirect=${encodeURIComponent(adminRedirect)}`} style={styles.actionButton}>
+          <Link to="/admin/login" style={styles.actionButton}>
             Login
-          </Link>
-          <Link
-            to={`/register?redirect=${encodeURIComponent(adminRedirect)}`}
-            style={{ ...styles.actionButton, ...styles.actionButtonSecondary }}
-          >
-            Register
           </Link>
         </div>
       </div>
@@ -328,29 +293,6 @@ const AdminDashboard = () => {
       {/* Page links grid */}
       <div style={styles.grid}>
         {pageLinks.map(({ id, path, label, icon, description }, index) => {
-          if (id === 'jobseekers') {
-            return (
-              <button
-                key={id}
-                onClick={loadJobSeekers}
-                style={{ ...styles.card, border: 'none', textAlign: 'left' }}
-                className="admin-card"
-              >
-                <div style={styles.cardHeader}>
-                  <div style={styles.icon}>{icon}</div>
-                  <span style={styles.cardBadge}>Admin</span>
-                </div>
-                <h2 style={styles.cardTitle}>{label}</h2>
-                <div style={styles.tagRow}>
-                  <span style={styles.tagPill}>Review</span>
-                  <span style={styles.tagPillSecondary}>Job Seekers</span>
-                </div>
-                <p style={styles.cardDescription}>{description}</p>
-              </button>
-            );
-          }
-
-
           return (
             <Link
               key={id}

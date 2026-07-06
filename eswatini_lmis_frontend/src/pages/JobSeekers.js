@@ -1,6 +1,7 @@
 // JobSeekers.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import heroImage from "../assets/seeker.jpg";
+import API from '../services/api';
 import { 
   FaUserAlt, FaBriefcase, FaPlus, FaEnvelope, FaSpinner,
   FaTimes, FaSearch, FaCalendarAlt
@@ -25,13 +26,6 @@ const JobSeekers = () => {
     const timeout = setTimeout(() => setSuccessMessage(''), 2000);
     return () => clearTimeout(timeout);
   }, [successMessage]);
-
-  const colors = { 
-    primary: '#103063', 
-    secondary: '#00AEEF', 
-    bgLight: '#F1F5F9', 
-    accent: '#4ade80'
-  };
 
   const sectors = [
     "Accommodation and Food Service Activities",
@@ -73,37 +67,30 @@ const JobSeekers = () => {
     profile_picture: null
   });
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+  // Use the centralized API service for consistent backend requests.
   const MAX_PROFILE_PIC_SIZE = 5 * 1024 * 1024;
 
-  useEffect(() => {
-    fetchSeekers();
-  }, []);
-
-  const fetchSeekers = async () => {
+  const fetchSeekers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/employees`);
-      if (response.ok) {
-        const data = await response.json();
-        setSeekers(data);
-        setFilteredSeekers(data);
-        setErrorMessage('');
-      } else {
-        // Try to read error details from server
-        let err = {};
-        try { err = await response.json(); } catch (e) { }
-        setErrorMessage(err.error || 'Failed to load talent pool');
-        setSeekers([]);
-        setFilteredSeekers([]);
-      }
+      const response = await API.get('/employees');
+      setSeekers(response.data);
+      setFilteredSeekers(response.data);
+      setErrorMessage('');
     } catch (err) {
       console.error('Unable to load talent pool:', err);
-      setErrorMessage('Unable to load talent pool. Check backend.');
+      const message = err?.response?.data?.error || err?.message || 'Unable to load talent pool. Check backend.';
+      setErrorMessage(message);
+      setSeekers([]);
+      setFilteredSeekers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSeekers();
+  }, [fetchSeekers]);
 
   // Filter logic
   useEffect(() => {
@@ -146,35 +133,25 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend
 
       setSuccessMessage('Creating your job seeker profile...');
       
-      // Use the new unified public endpoint that creates user and profile in one step
-      const profileResponse = await fetch(`${API_BASE}/employees`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name:         formData.full_name,
-          email:             formData.email,
-          national_id:       formData.national_id,
-          description:       formData.description,
-          phone:             formData.phone,
-          education_level:   formData.education_level,
-          region:            formData.region,
-          sector:            formData.sector,
-          skills:            formData.skills,
-          experience_years:  parseInt(formData.experience_years) || 0,
-          employment_status: formData.employment_status,
-          profile_picture:   formData.profile_picture ? await fileToBase64(formData.profile_picture) : null
-        })
+      // Use the centralized API service for consistent backend handling.
+      const profileResponse = await API.post('/employees', {
+        full_name:         formData.full_name,
+        email:             formData.email,
+        national_id:       formData.national_id,
+        description:       formData.description,
+        phone:             formData.phone,
+        education_level:   formData.education_level,
+        region:            formData.region,
+        sector:            formData.sector,
+        skills:            formData.skills,
+        experience_years:  parseInt(formData.experience_years) || 0,
+        employment_status: formData.employment_status,
+        profile_picture:   formData.profile_picture ? await fileToBase64(formData.profile_picture) : null
       });
 
-      let profileData = {};
-      const responseText = await profileResponse.text();
-      try {
-        profileData = responseText ? JSON.parse(responseText) : {};
-      } catch (parseError) {
-        profileData = { error: responseText || 'Registration failed' };
-      }
+      const profileData = profileResponse.data || {};
 
-      if (!profileResponse.ok) {
+      if (profileResponse.status >= 400) {
         setErrorMessage(profileData.error || 'Registration failed');
         setSubmitting(false);
         return;
@@ -194,7 +171,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend
         employment_status: 'Unemployed',
         skills: '',
         experience_years: 0,
-        profile_picture: null
+        profile_picture: null,
       });
       fetchSeekers();
     } catch (err) {

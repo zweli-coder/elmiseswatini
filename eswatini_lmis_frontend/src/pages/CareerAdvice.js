@@ -65,6 +65,7 @@ const CareerAdvice = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // FIX: The fetch call now correctly uses the API_ENDPOINT without adding a duplicate /api
         const res = await fetch(`${API_ENDPOINT}/career-advice`);
         const data = await res.json();
         setContent(Array.isArray(data) ? data : []);
