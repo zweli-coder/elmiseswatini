@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { FaEdit, FaTrash, FaUsers, FaSave, FaTimes, FaChevronLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
@@ -14,7 +14,7 @@ const AdminUsers = () => {
   const [formData, setFormData] = useState({ full_name: '', email: '', role_id: 1 });
   const [saving, setSaving] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!token) {
       navigate('/login');
       return;
@@ -31,11 +31,11 @@ const AdminUsers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, navigate]);
 
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, [fetchUsers]);
 
   const startEdit = (user) => {
     setEditingId(user.id);

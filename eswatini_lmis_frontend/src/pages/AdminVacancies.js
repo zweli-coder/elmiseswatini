@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { API_ENDPOINT } from '../services/api';
 
 const authHeader = (token) => {
   if (!token) return {};
@@ -95,7 +94,7 @@ const AdminVacancies = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/employers/jobs`, {
+      const res = await fetch(`${API_ENDPOINT}/employers/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

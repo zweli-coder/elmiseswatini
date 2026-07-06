@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import heroImage from '../assets/education.jpg';
 import PageLoader from '../components/common/PageLoader';
-import { FaSearch, FaFilter, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaSearch, FaFilter } from 'react-icons/fa';
+import API, { API_ENDPOINT } from '../services/api';
 
-const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+const isRequestCanceled = (err) => {
+    const message = err?.message || '';
+    return (
+        err?.name === 'AbortError' ||
+        err?.name === 'CanceledError' ||
+        err?.code === 'ERR_CANCELED' ||
+        /canceled|cancelled|aborted/i.test(message)
+    );
+};
 
 const getEducationImage = (category, title) => {
     const search = ((category || "") + " " + (title || "")).toLowerCase();
@@ -37,42 +46,55 @@ const EducationTraining = () => {
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
+        let isMounted = true;
 
         const fetchData = async () => {
             try {
                 setLoading(true);
-                
-                // Fetch all programs
-                const res = await fetch(`${API_ENDPOINT}/education-training`, { signal });
-                if (!res.ok) {
-                    const text = await res.text();
-                    throw new Error(text || `Request failed (${res.status})`);
-                }
-                const result = await res.json();
+                setError('');
+
+                // Use centralized axios API instance for consistent headers and error handling
+                const url = `/education-training`;
+                console.debug('Fetching education data from', `${API_ENDPOINT}${url}`);
+                const axiosRes = await API.get(url, { signal });
+
+                if (!isMounted) return;
+
+                const result = axiosRes.data;
                 let items = [];
                 if (Array.isArray(result)) items = result;
                 else if (result && Array.isArray(result.value)) items = result.value;
-                
+
                 setAllData(items);
                 setData(items);
-                
+
                 // Extract unique categories
                 const uniqueCategories = [...new Set(items.map(item => item.category))];
                 setCategories(uniqueCategories.sort());
-                
             } catch (err) {
-                if (err.name === 'AbortError') return;
-                console.error(err);
-                setError('Failed to load education data');
+                if (!isMounted || isRequestCanceled(err)) return;
+
+                // Axios errors have response/status
+                if (err?.response) {
+                    console.error('Education fetch failed', err.response.status, err.response.data);
+                    setError(`Error: ${err.response.status} ${err.response.statusText || ''}`);
+                } else {
+                    console.error('Education fetch failed', err);
+                    setError(`Failed to load education data: ${err.message || err}`);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchData();
 
-        return () => controller.abort();
-
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
     }, []);
 
     // Handle filtering

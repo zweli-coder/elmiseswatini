@@ -5,7 +5,7 @@ module.exports = function(app) {
   app.use(
     ['/api', '/uploads'],
     createProxyMiddleware({
-      target: 'https://elmiseswatini-backend.onrender.com',
+      target: 'http://localhost:3001',
       changeOrigin: true,
     })
   );

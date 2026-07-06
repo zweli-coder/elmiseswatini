@@ -119,13 +119,6 @@ export const Login = () => {
             Register now
           </Link>
         </p>
-
-        <p style={styles.cardNote}>
-          Admin?{' '}
-          <Link to="/admin/login" style={styles.link}>
-            Admin login
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -1,0 +1,186 @@
+.et-admin-page {
+    padding: 2rem 3rem;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+.et-admin-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.et-admin-header h1 {
+    font-size: 2rem;
+    color: #1e3a8a;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.et-admin-header p {
+    color: #475569;
+    font-size: 1rem;
+    max-width: 600px;
+}
+
+.et-admin-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #475569;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+}
+
+.et-admin-form-card {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(30, 58, 138, 0.07);
+    margin-bottom: 2rem;
+}
+
+.et-admin-form-card h3 {
+    margin-top: 0;
+    color: #1e3a8a;
+    font-size: 1.25rem;
+}
+
+.et-admin-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.et-admin-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.et-admin-input,
+.et-admin-textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.et-admin-input:focus,
+.et-admin-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.et-admin-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.et-admin-button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.et-admin-submit-btn,
+.et-admin-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.et-admin-submit-btn {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.et-admin-submit-btn:hover {
+    background-color: #1d4ed8;
+}
+
+.et-admin-submit-btn:disabled {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+}
+
+.et-admin-cancel-btn {
+    background-color: #e2e8f0;
+    color: #475569;
+}
+
+.et-admin-cancel-btn:hover {
+    background-color: #cbd5e1;
+}
+
+.et-admin-table-container {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(30, 58, 138, 0.07);
+}
+
+.et-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.et-admin-table th,
+.et-admin-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.et-admin-table th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+}
+
+.et-admin-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.et-admin-edit-btn,
+.et-admin-delete-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.et-admin-edit-btn {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+}
+
+.et-admin-delete-btn {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

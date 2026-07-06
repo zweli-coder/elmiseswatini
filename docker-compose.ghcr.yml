@@ -6,8 +6,8 @@ services:
     container_name: lmis_postgres
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-lmis}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-superuser}
+      POSTGRES_DB: ${DB_NAME:-eswatini_lmis}
     ports:
       - "5432:5432"
     volumes:
@@ -17,39 +17,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
 
   backend:
-    build:
-      context: ./eswatini_lmis_backend
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPO}/eswatini-lmis-backend:latest
     container_name: lmis_backend
     environment:
-      DB_HOST: db
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-lmis}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-eswatini_lmis}
+      DB_PASSWORD: ${DB_PASSWORD:-superuser}
       DB_PORT: 5432
-      JWT_SECRET: ${JWT_SECRET:-lmis_secret_key_2026}
-      NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
+      NODE_ENV: production
     ports:
       - "3001:3001"
+    volumes:
+      - ./eswatini_lmis_backend/uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./eswatini_lmis_backend/uploads:/app/uploads
-    restart: unless-stopped
+    restart: always
 
   frontend:
-    build:
-      context: ./eswatini_lmis_frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPO}/eswatini-lmis-frontend:latest
     container_name: lmis_frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    restart: unless-stopped
+    restart: always
 
 volumes:
   db_data:

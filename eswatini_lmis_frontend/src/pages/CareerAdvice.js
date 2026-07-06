@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import Rect, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_ENDPOINT } from '../services/api';
 import heroImage from '../assets/advice.jpg';
@@ -65,6 +65,7 @@ const CareerAdvice = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // FIX: The fetch call now correctly uses the API_ENDPOINT without adding a duplicate /api
         const res = await fetch(`${API_ENDPOINT}/career-advice`);
         const data = await res.json();
         setContent(Array.isArray(data) ? data : []);

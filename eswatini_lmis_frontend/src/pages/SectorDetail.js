@@ -442,6 +442,11 @@ const getSectorGrowthNotes = (sector) => {
 
 const LineChart = ({ data, width = 460, height = 180 }) => {
   const [tooltip, setTooltip] = useState(null);
+  // Guard against insufficient data to prevent NaN errors
+  if (!data || data.length < 2) {
+    return <svg viewBox={`0 0 ${width} ${height}`} style={styles.chartSvg}><text x={width/2} y={height/2} textAnchor="middle" fill="#64748b">Not enough data for a line chart.</text></svg>;
+  }
+
   const maxValue = Math.max(...data.map((item) => item.value)) * 1.15;
   const minValue = Math.min(...data.map((item) => item.value));
   const points = data
@@ -510,6 +515,11 @@ const LineChart = ({ data, width = 460, height = 180 }) => {
 
 const BarChart = ({ data, width = 460, height = 180 }) => {
   const [tooltip, setTooltip] = useState(null);
+  // Guard against empty data to prevent NaN errors
+  if (!data || data.length === 0) {
+    return <svg viewBox={`0 0 ${width} ${height}`} style={styles.chartSvg}><text x={width/2} y={height/2} textAnchor="middle" fill="#64748b">No data available for a bar chart.</text></svg>;
+  }
+
   const maxValue = Math.max(...data.map((item) => item.value)) * 1.15;
 
   const tooltipX = tooltip ? Math.min(tooltip.x + 10, width - 140) : 0;
@@ -618,12 +628,7 @@ const SectorDetail = () => {
   useEffect(() => {
     const fetchSectorDetail = async () => {
       try {
-        let res;
-        try {
-          res = await fetch(`${API_ENDPOINT}/economic-sectors/${sectorId}`);
-        } catch {
-          res = await fetch(`${API_ENDPOINT}/economic-sectors/${sectorId}`);
-        }
+        const res = await fetch(`${API_ENDPOINT}/economic-sectors/${sectorId}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setSector(data);
@@ -642,12 +647,7 @@ const SectorDetail = () => {
     const fetchSectorStatistics = async () => {
       if (!sector) return;
       try {
-        let res;
-        try {
-          res = await fetch(`${API_ENDPOINT}/statistics/raw`);
-        } catch {
-          res = await fetch(`${API_ENDPOINT}/statistics/raw`);
-        }
+        const res = await fetch(`${API_ENDPOINT}/statistics/raw`);
 
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const rows = await res.json();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Bar, Line, Doughnut, Radar, PolarArea } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,7 +14,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { FaChartBar, FaChartLine, FaChartPie, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaDownload } from 'react-icons/fa';
 
 ChartJS.register(
   CategoryScale,

@@ -34,103 +34,6 @@ const getSectorImage = (name) => {
   return defaultImg;
 };
 
-const getSectorPreviewPoints = (sector) => {
-  const lowerName = (sector.sector_name || '').toLowerCase();
-  if (lowerName.includes('agric')) {
-    return [
-      'Supported by crop production, livestock farming, and agro-processing.',
-      'Strong rural employment opportunities for farm technicians and extension workers.',
-      'Growth depends on improved irrigation, inputs, and local value addition.'
-    ];
-  }
-
-  if (lowerName.includes('mining') || lowerName.includes('quarry')) {
-    return [
-      'Driven by mineral extraction, quarry work, and site services.',
-      'Requires equipment operators, safety supervisors, and technical support.',
-      'Performance is tied to commodity demand and site safety standards.'
-    ];
-  }
-
-  if (lowerName.includes('manufact')) {
-    return [
-      'Includes food, textiles, building materials, and light industries.',
-      'Common roles include production operators, quality controllers, and maintenance staff.',
-      'Competitiveness depends on stable power, inputs, and market access.'
-    ];
-  }
-
-  if (lowerName.includes('construct')) {
-    return [
-      'Covers building, infrastructure, and civil works across public and private projects.',
-      'Job openings often include carpenters, masons, supervisors, and machine operators.',
-      'Growth follows investment in roads, housing, and commercial development.'
-    ];
-  }
-
-  if (lowerName.includes('wholesale') || lowerName.includes('retail')) {
-    return [
-      'Consists of shops, distribution centres, and repair services.',
-      'Key roles range from sales and stock control to customer service and logistics.',
-      'Demand is linked to consumer spending and value chain efficiency.'
-    ];
-  }
-
-  if (lowerName.includes('transport') || lowerName.includes('logistics')) {
-    return [
-      'Connects people and goods through road, freight, and passenger services.',
-      'Often hires drivers, warehouse staff, fleet coordinators, and customs aides.',
-      'Performance improves with better roads, border clearance, and fleet maintenance.'
-    ];
-  }
-
-  if (lowerName.includes('tour') || lowerName.includes('accom') || lowerName.includes('food')) {
-    return [
-      'Includes hotels, restaurants, travel services, and leisure experiences.',
-      'Common jobs are receptionists, cooks, tour guides, and housekeeping staff.',
-      'Visitor numbers and service quality are central to sector recovery and growth.'
-    ];
-  }
-
-  if (lowerName.includes('ict') || lowerName.includes('commun')) {
-    return [
-      'Covers software, digital services, communications, and network support.',
-      'Roles include developers, IT technicians, data specialists, and support staff.',
-      'Skills growth is essential for modernisation across government and business.'
-    ];
-  }
-
-  if (lowerName.includes('financ') || lowerName.includes('insur')) {
-    return [
-      'Includes banking, insurance, and financial support services.',
-      'Positions range from tellers and advisors to accountants and compliance officers.',
-      'Digital payment systems and regulatory compliance shape market activity.'
-    ];
-  }
-
-  if (lowerName.includes('educat')) {
-    return [
-      'Covers schools, training centres, and vocational education programs.',
-      'Typical jobs include teachers, trainers, curriculum developers, and administrators.',
-      'Demand follows population growth and investment in learning facilities.'
-    ];
-  }
-
-  if (lowerName.includes('health') || lowerName.includes('social')) {
-    return [
-      'Includes hospitals, clinics, community health, and social support services.',
-      'Common roles are nurses, health workers, records officers, and support staff.',
-      'Health outcomes depend on workforce capacity, facilities, and preventive care.'
-    ];
-  }
-
-  return [
-    'This sector plays a key role in Eswatini’s economy through jobs and services.',
-    'Typical employment ranges from technical operators to management and support roles.',
-    'Growth depends on market demand, infrastructure, and workforce skills.'
-  ];
-};
-
 const EconomicSectors = () => {
   const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,12 +43,7 @@ const EconomicSectors = () => {
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        let res;
-        try {
-          res = await fetch(`${API_ENDPOINT}/economic-sectors`);
-        } catch {
-          res = await fetch(`${API_ENDPOINT}/economic-sectors`);
-        }
+        const res = await fetch(`${API_ENDPOINT}/economic-sectors`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setSectors(Array.isArray(data) ? data : []);

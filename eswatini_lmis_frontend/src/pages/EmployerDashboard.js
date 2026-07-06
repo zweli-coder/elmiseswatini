@@ -3,19 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FaBriefcase,
   FaClipboardList,
-  FaFileAlt,
-  FaSignOutAlt,
-  FaSearch,
+  FaFileAlt,  
   FaMapMarkerAlt,
   FaClock,
   FaBuilding,
   FaSpinner,
   FaTimes,
-  FaCheckCircle
+  FaCheckCircle,
+  FaSignOutAlt
 } from 'react-icons/fa';
 import './EmployerDashboard.css';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { API_ENDPOINT } from '../services/api';
 
 const decodeToken = (token) => {
   try {
@@ -77,7 +75,7 @@ const EmployerDashboard = () => {
     }
 
     // fallback to /auth/me
-    fetch(`${API_BASE}/auth/me`, { headers: authHeader(token) })
+    fetch(`${API_ENDPOINT}/auth/me`, { headers: authHeader(token) })
       .then((res) => {
         if (!res.ok) throw new Error('unauthenticated');
         return res.json();
@@ -102,7 +100,7 @@ const EmployerDashboard = () => {
 
     try {
       const token = localStorage.getItem('lmis_token');
-      const res = await fetch(`${API_BASE}/employers/jobs`, {
+      const res = await fetch(`${API_ENDPOINT}/employers/jobs`, {
         headers: authHeader(token),
       });
       if (!res.ok) {
@@ -124,7 +122,7 @@ const EmployerDashboard = () => {
       setJobsError(null);
 
       try {
-        const res = await fetch(`${API_BASE}/jobs`);
+        const res = await fetch(`${API_ENDPOINT}/jobs`);
         if (!res.ok) {
           throw new Error('Failed to load vacancies');
         }

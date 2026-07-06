@@ -227,6 +227,77 @@
   transform: scaleX(1);
 }
 
+/* === Category-Specific Coloring === */
+
+/* --- 1. Reports (Green) --- */
+.publication-card.category-report {
+  background: linear-gradient(135deg, #b9f6ca, #81c784);
+}
+.publication-card.category-report::before {
+  background: #2ecc71; /* Green */
+}
+.publication-card.category-report:hover {
+  border-color: #2ecc71;
+  box-shadow: 0 12px 28px rgba(46, 204, 113, 0.25);
+}
+.publication-card.category-report:hover .card-header h3 {
+  color: #27ae60; /* Darker Green */
+}
+
+/* --- 2. Laws (Blue) --- */
+.publication-card.category-law {
+  background: linear-gradient(135deg, #90caf9, #64b5f6);
+}
+.publication-card.category-law::before {
+  background: #3498db; /* Blue */
+}
+.publication-card.category-law:hover {
+  border-color: #3498db;
+  box-shadow: 0 12px 28px rgba(52, 152, 219, 0.25);
+}
+.publication-card.category-law:hover .card-header h3 {
+  color: #2980b9; /* Darker Blue */
+}
+
+/* --- 3. Policies (Yellow) --- */
+.publication-card.category-policy {
+  background: linear-gradient(135deg, #fff59d, #ffee58);
+}
+.publication-card.category-policy::before {
+  background: #f1c40f; /* Yellow */
+}
+.publication-card.category-policy:hover {
+  border-color: #f1c40f;
+  box-shadow: 0 12px 28px rgba(241, 196, 15, 0.25);
+}
+.publication-card.category-policy:hover .card-header h3 {
+  color: #f39c12; /* Darker Yellow */
+}
+
+/* --- 4. Surveys (Red) --- */
+.publication-card.category-survey {
+  background: linear-gradient(135deg, #ef9a9a, #e57373);
+}
+.publication-card.category-survey::before {
+  background: #e74c3c; /* Red */
+}
+.publication-card.category-survey:hover {
+  border-color: #e74c3c;
+  box-shadow: 0 12px 28px rgba(231, 76, 60, 0.25);
+}
+.publication-card.category-survey:hover .card-header h3 {
+  color: #c0392b; /* Darker Red */
+}
+
+/*
+  Remove the generic hover effects for title color
+  as they are now handled by the category-specific classes.
+  The generic card header hover is also removed.
+*/
+.publication-card:hover .card-header h3 {
+  color: #2c3e50; /* This is now handled by category-specific rules */
+}
+
 .card-header {
   padding: 1.25rem;
   border-bottom: 2px solid #ecf0f1;
@@ -234,13 +305,8 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  background: transparent; /* Make header transparent to show card background */
   transition: all 0.3s ease;
-}
-
-.publication-card:hover .card-header {
-  border-bottom-color: #3498db;
-  background: linear-gradient(135deg, #f0f8ff 0%, #e3f2fd 100%);
 }
 
 .card-header h3 {
@@ -250,10 +316,6 @@
   line-height: 1.3;
   flex: 1;
   transition: color 0.3s ease;
-}
-
-.publication-card:hover .card-header h3 {
-  color: #3498db;
 }
 
 .category-badge {
@@ -277,12 +339,8 @@
 .card-body {
   padding: 1.25rem;
   flex: 1;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  background: transparent; /* Make body transparent to show card background */
   transition: background 0.3s ease;
-}
-
-.publication-card:hover .card-body {
-  background: linear-gradient(135deg, #f0f8ff 0%, #e8f4f8 100%);
 }
 
 .description {
@@ -330,20 +388,12 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-}
-
-.card-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #ecf0f1;
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  background: #fafbfc;
+  background: transparent; /* Make footer transparent to show card background */
   transition: background 0.3s ease;
 }
 
 .publication-card:hover .card-footer {
-  background: #f0f8ff;
+  background: rgba(255, 255, 255, 0.2); /* A subtle overlay on hover */
 }
 
 .view-btn {

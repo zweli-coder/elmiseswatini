@@ -1,0 +1,56 @@
+.pivot-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.pivot-container.pivot-loading {
+  text-align: center;
+  color: #6b7280;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pivot-container h3 {
+  margin-top: 0;
+  color: #1e3a8a;
+  border-bottom: 2px solid #e0e7ff;
+  padding-bottom: 0.5rem;
+}
+
+.pivot-table-wrapper {
+  overflow-x: auto;
+}
+
+.pivot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pivot-table th,
+.pivot-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.pivot-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pivot-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.pivot-table td.na {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+}

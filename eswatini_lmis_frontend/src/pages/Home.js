@@ -26,7 +26,6 @@ import {
   FaEye,
   FaGlobeAfrica,
   FaBuilding,
-  FaTools,
   FaMapMarkerAlt
 } from 'react-icons/fa';
 
@@ -98,9 +97,9 @@ useEffect(() => {
   const interval = setInterval(() => {
     setCurrentSlide(prev => (prev + 1) % heroImages.length);
   }, 5000);
-
+ 
   return () => clearInterval(interval);
-}, [heroImages.length]);
+}, []);
 
   const handleOpenJobSeekerModal = async () => {
     setShowJobSeekerModal(true);

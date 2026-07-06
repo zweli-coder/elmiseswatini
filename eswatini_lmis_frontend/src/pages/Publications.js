@@ -1,25 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { API_ENDPOINT } from '../services/api';
 import heroImage from "../assets/publications.jpg";
 import {
   FaFilePdf,
-  FaCaretDown,
-  FaEye,
   FaTimes as FaClose,
   FaCalendarAlt,
   FaTrash,
   FaSpinner,
   FaExclamationCircle,
-  FaCheckCircle
+  FaCheckCircle,
+  FaCaretDown
 } from 'react-icons/fa';
 import PageLoader from '../components/common/PageLoader';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { API_ENDPOINT } from '../services/api';
 
 const constructFileUrl = (relativeUrl) => {
   if (!relativeUrl) return '';
-  const backendBase = API_BASE_URL.replace('/api', '');
-  return `${backendBase}${relativeUrl}`;
+  // API_ENDPOINT is guaranteed to include the '/api' suffix from services/api.js.
+  // Derive the origin/base by stripping the trailing '/api' so we can point to static files
+  // served at the server root (e.g. /uploads).
+  const base = String(API_ENDPOINT).replace(/\/api\/?$/i, '');
+  return `${base}${relativeUrl.startsWith('/') ? '' : '/'}${relativeUrl}`;
 };
 // ---------------------------------------------------------------------------
 // Custom hook: closes the menu when a click occurs outside the given ref(s)
@@ -46,11 +46,10 @@ const Publication = () => {
 
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [viewingPublication, setViewingPublication] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [pdfLoadError, setPdfLoadError] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,17 +83,6 @@ const Publication = () => {
     useCallback(() => setIsTypeOpen(false), [])
   );
 
-  // Decode JWT payload without a library
-  const decodeToken = (token) => {
-    try {
-      const raw = token.startsWith('Bearer ') ? token.slice(7) : token;
-      const base64 = raw.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(atob(base64));
-    } catch {
-      return null;
-    }
-  };
-
   // Always send token as "Bearer <token>", stripping any existing prefix
   const authHeader = (token) => {
     if (!token) return {};
@@ -122,38 +110,22 @@ const Publication = () => {
     return 'Reports';
   };
 
-  const getPublicationTypeColor = (doc) => {
-    const category = (doc.category || doc.type || '').toLowerCase();
-    // Color by category - consistent colors for each category type
-    if (category.includes('law') || category.includes('act') || category.includes('regulation')) {
-      return { bg: '#ffcccc', overlay: 'rgba(255, 0, 0, 0.08)', accent: '#dc2626' };
-    }
-    if (category.includes('policy')) {
-      return { bg: '#ccffcc', overlay: 'rgba(34, 197, 94, 0.08)', accent: '#16a34a' };
-    }
-    if (category.includes('questionnaire') || category.includes('survey')) {
-      return { bg: '#ffffcc', overlay: 'rgba(234, 179, 8, 0.08)', accent: '#eab308' };
-    }
-    // Default: light blue for reports
-    return { bg: '#cce5ff', overlay: 'rgba(59, 130, 246, 0.08)', accent: '#2563eb' };
+  // Helper to get the CSS class based on category for color-coding
+  const getCategoryClass = (publication) => {
+    const type = (publication.type || '').toLowerCase();
+    if (type.includes('report')) return 'category-report';
+    if (type.includes('law')) return 'category-law';
+    if (type.includes('policy')) return 'category-policy';
+    if (type.includes('survey') || type.includes('questionnaire')) return 'category-survey';
+    return ''; // Default class if no match
   };
-
-  // Check admin status on component mount
-  useEffect(() => {
-    const token = localStorage.getItem('lmis_token');
-    if (token) {
-      const payload = decodeToken(token);
-      setIsAdmin(payload && payload.role_id === 1);
-    } else {
-      setIsAdmin(false);
-    }
-  }, []);
 
   const [count, setCount] = useState({
     publications: 0,
     areas: 0,
     years: 0
   });
+
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -163,6 +135,7 @@ const Publication = () => {
   useEffect(() => {
     const loadPublications = async () => {
       try {
+        // FIX: Do not add /api here, as API_ENDPOINT should already have it.
         const response = await fetch(`${API_ENDPOINT}/publications`);
         if (!response.ok) {
           throw new Error('Unable to fetch publications');
@@ -327,22 +300,26 @@ const Publication = () => {
 
   // OPEN PDF
   const handleDocClick = (doc) => {
-    const filePath = doc.file_path || doc.file_url || '';
+    const filePath = doc.file_path || doc.file_url || "";
+    const fileUrl = constructFileUrl(filePath);
+    
+    // Always try to open the document in the in-app modal.
+    // The modal will show a download prompt if the file type isn't previewable.
     setSelectedDoc({
       ...doc,
       file_path: filePath,
-      file_url: constructFileUrl(filePath),
+      file_url: fileUrl,
     });
     setPdfLoadError(false);
     setShowPdfModal(true);
     document.body.style.overflow = "hidden";
-    
-    // Set a timeout to detect if iframe fails to load (404 or network errors)
+
+    // Set a timeout to detect if the iframe fails to load (e.g., for non-PDF files).
     const timer = setTimeout(() => {
       setPdfLoadError(true);
     }, 5000);
-    
-    // Store timer ID so we can clear it if iframe loads successfully
+
+    // Store timer ID so we can clear it if the iframe loads successfully.
     window._pdfLoadTimer = timer;
   };
 
@@ -431,6 +408,7 @@ const Publication = () => {
 
     try {
       const token = localStorage.getItem('lmis_token');
+      // FIX: Do not add /api here.
       const res = await fetch(`${API_ENDPOINT}/publications/${id}`, {
         method: 'DELETE',
         headers: {
@@ -832,15 +810,11 @@ const Publication = () => {
             {filteredDocs.map(doc => (
               <div
                 key={doc.id}
-                className="publication-card"
-                style={{ 
-                  ...styles.docCard, 
-                  backgroundColor: getPublicationTypeColor(doc).bg,
-                  backgroundImage: `linear-gradient(135deg, ${getPublicationTypeColor(doc).overlay} 0%, rgba(255,255,255,0.3) 100%)`
-                }}
+                className={`publication-card ${getCategoryClass(doc)}`}
+                style={{ ...styles.docCard }}
                 onClick={() => handleDocClick(doc)}
               >
-                <div style={{...styles.docYear, borderColor: getPublicationTypeColor(doc).accent}}>{doc.year}</div>
+                <div style={{...styles.docYear}}>{doc.year}</div>
                 {getDocStatus(doc) && (
                   <span className={`publication-status ${getDocStatus(doc).toLowerCase()}`} style={styles.statusBadge}>
                     {getDocStatus(doc)}

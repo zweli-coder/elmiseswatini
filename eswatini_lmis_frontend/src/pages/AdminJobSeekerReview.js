@@ -1,8 +1,7 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSpinner, FaTimes, FaUserAlt, FaBriefcase, FaEnvelope, FaCheckCircle, FaExclamationCircle, FaBan, FaChevronLeft } from 'react-icons/fa';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { FaSpinner, FaCheckCircle, FaExclamationCircle, FaBan, FaChevronLeft } from 'react-icons/fa';
+import { API_ENDPOINT } from '../services/api';
 
 // Decode JWT payload without a library
 const decodeToken = (token) => {
@@ -32,8 +31,23 @@ const AdminJobSeekerReview = () => {
   const [loadingJobSeekers, setLoadingJobSeekers] = useState(false);
   const [jobSeekersError, setJobSeekersError] = useState(null);
   const [actionStatus, setActionStatus] = useState({ type: '', message: '' });
-
-  const adminRedirect = '/admin';
+  
+  const loadJobSeekers = useCallback(async () => {
+    setLoadingJobSeekers(true);
+    setJobSeekersError(null);
+    try {
+      const res = await fetch(`${API_ENDPOINT}/employees`, {
+        headers: authHeader(token)
+      });
+      if (!res.ok) throw new Error('Failed to load job seekers');
+      const data = await res.json();
+      setJobSeekers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setJobSeekersError(err.message || 'Could not fetch job seekers');
+    } finally {
+      setLoadingJobSeekers(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -51,27 +65,16 @@ const AdminJobSeekerReview = () => {
         return;
       }
 
-      const roleId =
-        payload.role_id ??
-        payload.user?.role_id ??
-        (payload.role === 'admin' ? 1 : null) ??
-        (typeof payload.role === 'number' ? payload.role : null);
+      const roleId = payload.role_id ?? payload.user?.role_id ?? (payload.role === 'admin' ? 1 : null) ?? (typeof payload.role === 'number' ? payload.role : null);
 
       if (roleId !== null) {
-        setUser({
-          id: payload.id ?? payload.user?.id,
-          full_name: payload.full_name ?? payload.name ?? payload.user?.full_name ?? 'Admin',
-          email: payload.email ?? payload.user?.email,
-          role_id: roleId
-        });
+        setUser({ id: payload.id ?? payload.user?.id, full_name: payload.full_name ?? payload.name ?? payload.user?.full_name ?? 'Admin', email: payload.email ?? payload.user?.email, role_id: roleId });
         setAuthStatus(roleId === 1 ? 'ok' : 'forbidden');
         return;
       }
     }
 
-    fetch(`${API_BASE}/auth/me`, {
-      headers: authHeader(token)
-    })
+    fetch(`${API_ENDPOINT}/auth/me`, { headers: authHeader(token) })
       .then(res => {
         if (res.status === 401 || res.status === 403) {
           localStorage.removeItem('lmis_token');
@@ -97,24 +100,7 @@ const AdminJobSeekerReview = () => {
     if (authStatus === 'ok') {
       loadJobSeekers();
     }
-  }, [authStatus, token]); // Added token to dependency array
-
-  const loadJobSeekers = async () => {
-    setLoadingJobSeekers(true);
-    setJobSeekersError(null);
-    try {
-      const res = await fetch(`${API_BASE}/employees`, {
-        headers: authHeader(token)
-      });
-      if (!res.ok) throw new Error('Failed to load job seekers');
-      const data = await res.json();
-      setJobSeekers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setJobSeekersError(err.message || 'Could not fetch job seekers');
-    } finally {
-      setLoadingJobSeekers(false);
-    }
-  };
+  }, [authStatus, loadJobSeekers]);
 
   const hasRequiredJobSeekerDocs = (seeker) => {
     return Boolean(
@@ -129,7 +115,7 @@ const AdminJobSeekerReview = () => {
   const handleJobSeekerDecision = async (id, decision) => {
     setActionStatus({ type: 'loading', message: 'Processing decision...' });
     try {
-      const res = await fetch(`${API_BASE}/admin/jobseekers/${id}/status`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/jobseekers/${id}/status`, {
         method: 'PUT',
         headers: { ...authHeader(token), 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: decision })

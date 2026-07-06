@@ -1,22 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Link } from 'react-router-dom';
-import statisticsHero from '../assets/stats.png';
+import React, { useState, useEffect, useMemo } from "react";
+import statisticsHero from '../assets/education.jpg';
 import { 
   FaSearch, FaTable, FaChartBar, FaDatabase, FaChevronDown, FaCalendarAlt,
-  FaHome, FaGripVertical, FaInfoCircle, FaList, 
-  FaDownload, FaSort, FaBookOpen, FaBriefcase, FaUserTie 
+  FaGripVertical, FaList, 
+  FaDownload, FaSort
 } from 'react-icons/fa';
 import { Bar, Line, Radar, Pie, Doughnut, PolarArea, Chart as ReactChart } from "react-chartjs-2";
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, 
-  LineElement, RadialLinearScale, ArcElement, Title, Tooltip, Legend
-} from "chart.js";
-
-const API_ENDPOINT = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, RadialLinearScale, ArcElement, Title, Tooltip, Legend, Filler } from "chart.js";
+import { API_ENDPOINT } from '../services/api';
 
 ChartJS.register(
-  CategoryScale, LinearScale, BarElement, PointElement, 
-  LineElement, RadialLinearScale, ArcElement, Title, Tooltip, Legend
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement, RadialLinearScale, ArcElement, Title, Tooltip, Legend, Filler
 );
 
 // --- 1. DATA VIEW COMPONENT (WITH CUSTOM MODAL POPUP) ---
@@ -134,47 +128,176 @@ const DetailTable = ({ rows = [] }) => {
 };
 
 // --- 2. PIVOT TABLE COMPONENT ---
-const PivotTable = () => {
-  const headers = ["Administration", "Agriculture", "Construction", "Education Health...", "Finance Ict...", "Industry", "Trade", "Transport...", "All Industries"];
-  const rows = [
-    { region: "Hhohho", values: [38.512, 19.177, 34.041, 37.154, 47.948, 17.362, 30.905, 36.441, "30.667"] },
-    { region: "Lubombo", values: [9.428, 45.027, 11.828, 12.755, 3.822, 14.483, 8.768, 9.37, "15.203"] },
-    { region: "Manzini", values: [44.451, 20.241, 48.675, 35.949, 45.077, 54.747, 47.748, 45.519, "42.35"] },
-    { region: "Shiselweni", values: [7.609, 15.555, 5.455, 14.143, 3.153, 13.408, 12.579, 8.669, "11.779"] },
-  ];
+const PivotTable = ({ data = [] }) => {
+  const [rowField, setRowField] = useState('region');
+  const [colField, setColField] = useState('year');
+  const [valueField, setValueField] = useState('value');
+  const [aggFunction, setAggFunction] = useState('SUM');
+
+  const fields = useMemo(() => (data.length > 0 ? Object.keys(data[0]).filter(f => !['id', 'upload_id', 'created_at'].includes(f)) : []), [data]);
+  const numericFields = fields.filter(f => data.some(row => typeof row[f] === 'number' || !isNaN(parseFloat(row[f]))));
+  const categoricalFields = fields.filter(f => !numericFields.includes(f) && f !== 'value');
+
+  const pivotData = useMemo(() => {
+    if (!data.length || !rowField || !colField || !valueField) return { rows: [], cols: [], totals: {} };
+
+    const rowValues = [...new Set(data.map(item => item[rowField]))].sort();
+    const colValues = [...new Set(data.map(item => item[colField]))].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+
+    const matrix = rowValues.map(rowVal => {
+      const rowData = { rowHeader: rowVal };
+      colValues.forEach(colVal => {
+        const matching = data.filter(item => item[rowField] === rowVal && item[colField] === colVal);
+        let aggregatedValue = 0;
+        if (matching.length > 0) {
+          const values = matching.map(item => parseFloat(item[valueField]) || 0);
+          switch (aggFunction) {
+            case 'SUM':
+              aggregatedValue = values.reduce((a, b) => a + b, 0);
+              break;
+            case 'AVG':
+              aggregatedValue = values.reduce((a, b) => a + b, 0) / values.length;
+              break;
+            case 'COUNT':
+              aggregatedValue = matching.length;
+              break;
+            case 'MEDIAN':
+              const sorted = values.sort((a, b) => a - b);
+              const mid = Math.floor(sorted.length / 2);
+              aggregatedValue = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+              break;
+            default:
+              aggregatedValue = values.reduce((a, b) => a + b, 0);
+          }
+        }
+        rowData[colVal] = aggFunction === 'COUNT' ? aggregatedValue : aggregatedValue.toFixed(2);
+      });
+      return rowData;
+    });
+    
+    const colTotals = {};
+    colValues.forEach(col => {
+      colTotals[col] = matrix.reduce((sum, row) => sum + (parseFloat(row[col]) || 0), 0);
+    });
+
+    matrix.forEach(row => {
+      row.rowTotal = colValues.reduce((sum, col) => sum + (parseFloat(row[col]) || 0), 0);
+    });
+
+    const grandTotal = Object.values(colTotals).reduce((sum, val) => sum + val, 0);
+
+    return { 
+      rows: matrix, 
+      cols: colValues, 
+      totals: {
+        cols: colTotals,
+        grandTotal
+      } 
+    };
+  }, [data, rowField, colField, valueField, aggFunction]);
+
+  const { min, max } = useMemo(() => {
+    if (!pivotData.rows.length) return { min: 0, max: 0 };
+    const allValues = pivotData.rows.flatMap(row =>
+      pivotData.cols.map(col => parseFloat(row[col]) || 0)
+    );
+    if (allValues.length === 0) return { min: 0, max: 0 };
+    return { min: Math.min(...allValues), max: Math.max(...allValues) };
+  }, [pivotData]);
+
+  const getCellStyle = (value) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || max === min) {
+      return {}; // Default style for non-numeric or single-value data
+    }
+
+    const percentage = (numValue - min) / (max - min);
+    // Using HSL for a smooth color transition from a very light blue to a deep blue
+    const lightness = 95 - (percentage * 60); // from 95% (light) to 35% (dark)
+    const backgroundColor = `hsl(212, 100%, ${lightness}%)`;
+    // Adjust text color for better contrast on darker backgrounds
+    const color = lightness < 65 ? '#ffffff' : '#0f172a';
+    return { backgroundColor, color, fontWeight: lightness < 65 ? '600' : 'normal' };
+  };
+
+  const handleExport = () => {
+    let csv = `${rowField},${pivotData.cols.join(',')},Row Total\n`;
+    
+    pivotData.rows.forEach(row => {
+      const values = pivotData.cols.map(col => row[col] || '0');
+      csv += `${row.rowHeader},${values.join(',')},${row.rowTotal.toFixed(2)}\n`;
+    });
+
+    csv += `Column Total,${pivotData.cols.map(col => (pivotData.totals.cols[col] || 0).toFixed(2)).join(',')},${pivotData.totals.grandTotal.toFixed(2)}\n`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'pivot_table_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div style={styles.pivotWrapper}>
-      <div style={styles.pivotControls}>
-        <div style={styles.pivotBox}><div style={styles.pivotBoxLabel}>Available fields</div><div style={styles.dashedContainer}></div></div>
-        <div style={styles.pivotBox}>
-          <div style={styles.pivotBoxLabel}>Columns</div>
-          <div style={styles.dashedContainer}>
-            <span style={styles.pivotTag}><FaGripVertical size={10} style={{marginRight: '5px'}}/> Year</span>
-            <span style={styles.pivotTag}><FaGripVertical size={10} style={{marginRight: '5px'}}/> Industry Group (EIN)</span>
-          </div>
-        </div>
-        <div style={styles.pivotBox}>
-          <div style={styles.pivotBoxLabel}>Rows</div>
-          <div style={styles.dashedContainer}><span style={styles.pivotTag}><FaGripVertical size={10} style={{marginRight: '5px'}}/> Region</span></div>
+      <div style={styles.pivotControlsV2}>
+        <label style={styles.pivotControlGroup}>
+          <span style={styles.pivotBoxLabel}>Rows</span>
+          <select style={styles.pivotSelect} value={rowField} onChange={e => setRowField(e.target.value)}>
+            {categoricalFields.map(f => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
+          </select>
+        </label>
+        <label style={styles.pivotControlGroup}>
+          <span style={styles.pivotBoxLabel}>Columns</span>
+          <select style={styles.pivotSelect} value={colField} onChange={e => setColField(e.target.value)}>
+            {categoricalFields.map(f => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
+          </select>
+        </label>
+        <label style={styles.pivotControlGroup}>
+          <span style={styles.pivotBoxLabel}>Values</span>
+          <select style={styles.pivotSelect} value={valueField} onChange={e => setValueField(e.target.value)}>
+            {numericFields.map(f => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
+          </select>
+        </label>
+        <label style={styles.pivotControlGroup}>
+          <span style={styles.pivotBoxLabel}>Aggregate</span>
+          <select style={styles.pivotSelect} value={aggFunction} onChange={e => setAggFunction(e.target.value)}>
+            <option value="SUM">Sum</option>
+            <option value="AVG">Average</option>
+            <option value="COUNT">Count</option>
+            <option value="MEDIAN">Median</option>
+          </select>
+        </label>
+        <div style={styles.pivotExportContainer}>
+          <button onClick={handleExport} style={styles.exportBtn}>
+            <FaDownload style={{ marginRight: 8 }} />
+            Export CSV
+          </button>
         </div>
       </div>
       <div style={styles.tableScrollWrapper}>
         <table style={styles.table}>
           <thead>
             <tr>
-              <th rowSpan="2" style={styles.pivotHeaderCellMain}></th>
-              <th colSpan={headers.length} style={styles.pivotHeaderYear}>2010</th>
+              <th style={styles.pivotHeaderCellMain}>{`${rowField} / ${colField}`}</th>
+              {pivotData.cols.map((col, i) => (<th key={i} style={styles.tableCellSubHeader}>{col}</th>))}
+              <th style={{...styles.tableCellSubHeader, ...styles.totalCellHeader}}>Row Total</th>
             </tr>
-            <tr>{headers.map((h, i) => (<th key={i} style={styles.tableCellSubHeader}>{h}</th>))}</tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
+            {pivotData.rows.map((row, i) => (
               <tr key={i}>
-                <td style={styles.tableCellRegion}>{row.region}</td>
-                {row.values.map((v, j) => (<td key={j} style={styles.tableCellData}>{v}</td>))}
+                <td style={styles.tableCellRegion}>{row.rowHeader}</td>
+                {pivotData.cols.map((col, j) => (<td key={j} style={styles.tableCellData}>{row[col]}</td>))}
+                <td style={{...styles.tableCellData, ...styles.totalCell}}>{row.rowTotal.toFixed(2)}</td>
               </tr>
             ))}
+            <tr style={styles.totalRow}>
+              <td style={{...styles.tableCellRegion, ...styles.totalCellHeader}}>Column Total</td>
+              {pivotData.cols.map((col, j) => (<td key={j} style={{...styles.tableCellData, ...styles.totalCell}}>{(pivotData.totals.cols[col] || 0).toFixed(2)}</td>))}
+              <td style={{...styles.tableCellData, ...styles.grandTotalCell}}>{pivotData.totals.grandTotal.toFixed(2)}</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -188,18 +311,19 @@ export default function Statistics() {
   // ============================================================
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
-  const [selectedYearDate, setSelectedYearDate] = useState("");
-  const [count, setCount] = useState(0);
   const [matchingStats, setMatchingStats] = useState([]); // ← Holds grouped cards
   const [selectedStat, setSelectedStat] = useState(null);
   const [activeTab, setActiveTab] = useState("Chart");
   const [searchTerm, setSearchTerm] = useState("");
-  const [chartType, setChartType] = useState("Bar");
   const [selectedDataset, setSelectedDataset] = useState('chartData');
+  const [chartType, setChartType] = useState("Smooth Line");
   const [apiStats, setApiStats] = useState(null);
   const [rawDbData, setRawDbData] = useState([]); // ← Raw rows from /api/statistics/raw
 
-  const colors = { primary: '#103063', secondary: '#00AEEF', bgLight: '#F1F5F9', accent: '#4ade80' };
+  // New state for dynamic chart controls
+  const [chartXAxis, setChartXAxis] = useState('year');
+  const [chartYAxis, setChartYAxis] = useState('value');
+  const [chartGroupBy, setChartGroupBy] = useState('region');
 
   // ============================================================
   // FALLBACK MOCK DATA (when DB has no records)
@@ -218,7 +342,8 @@ export default function Statistics() {
   // ============================================================
   useEffect(() => {
     let mounted = true;
-    fetch(`${API_ENDPOINT}/statistics/raw`)
+    // FIX: Do not add /api here, as API_ENDPOINT should already have it.
+    fetch(`${API_ENDPOINT}/statistics/raw`) // This was already correct, ensuring it stays this way.
       .then(res => res.json())
       .then(data => {
         if (mounted) {
@@ -292,7 +417,7 @@ export default function Statistics() {
 
     setMatchingStats(filteredData);
 
-  }, [selectedCategory, selectedYear, searchTerm, rawDbData]);
+  }, [selectedCategory, selectedYear, searchTerm, rawDbData, mockData]);
 
   // ============================================================
   // EFFECT 3: FETCH CHART DATA FROM BACKEND
@@ -300,7 +425,8 @@ export default function Statistics() {
   // ============================================================
   useEffect(() => {
     let mounted = true;
-    fetch(`${API_ENDPOINT}/statistics/charts`)
+    // FIX: Do not add /api here.
+    fetch(`${API_ENDPOINT}/statistics/charts`) // This was also correct, ensuring it stays this way.
       .then(res => res.json())
       .then(data => { if (mounted) setApiStats(data); })
       .catch(err => console.warn('Failed to load statistics', err));
@@ -311,21 +437,6 @@ export default function Statistics() {
   // EFFECT 4: COUNTER ANIMATION
   // ============================================================
   useEffect(() => {
-    let start = 0;
-    const end = 665000;
-    const duration = 1500;
-    const increment = end / (duration / 16);
-
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        start = end;
-        clearInterval(timer);
-      }
-      setCount(Math.floor(start));
-    }, 16);
-
-    return () => clearInterval(timer);
   }, []);
 
   const categories = ["Employed population", "Employment income", "Equity in employment", "Labour demand", "Labour force", "Labour under-utilisation", "Industrial relations", "Poverty", "Skills"];
@@ -337,35 +448,38 @@ export default function Statistics() {
     ? Array.from(new Set(selectedStat.rows.map((row) => String(row.year).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     : yearOptions;
 
+  const chartFieldOptions = selectedStat?.rows?.length > 0 ? Object.keys(selectedStat.rows[0]).filter(k => !['id', 'upload_id', 'created_at', 'upload_title', 'upload_description', 'upload_category', 'upload_year'].includes(k)) : ['year', 'category', 'industry', 'region', 'value'];
+
   const renderActiveChart = () => {
     const selectedRows = selectedStat?.rows || [];
     const rawData = selectedRows.length ? selectedRows : rawDbData || [];
 
-    const groupedByYear = rawData.reduce((acc, item) => {
-      const yearKey = item.year ? String(item.year).trim() : 'Unknown';
-      if (!acc[yearKey]) acc[yearKey] = [];
-      acc[yearKey].push(item);
+    // --- DYNAMIC CHART DATA LOGIC ---
+    const labels = [...new Set(rawData.map(row => String(row[chartXAxis] || 'N/A').trim()))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const groups = [...new Set(rawData.map(row => String(row[chartGroupBy] || 'Default').trim()))];
+
+    const groupedData = rawData.reduce((acc, row) => {
+      const xValue = String(row[chartXAxis] || 'N/A').trim();
+      const groupValue = String(row[chartGroupBy] || 'Default').trim();
+      const yValue = parseFloat(row[chartYAxis]) || 0;
+
+      if (!acc[xValue]) acc[xValue] = {};
+      acc[xValue][groupValue] = (acc[xValue][groupValue] || 0) + yValue;
       return acc;
     }, {});
 
-    const years = Object.keys(groupedByYear).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const PALETTE = ['#3b82f6', '#f97316', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#ef4444'];
+    const datasets = groups.map((group, idx) => ({
+      label: group,
+      data: labels.map(label => (groupedData[label]?.[group] || 0).toFixed(2)),
+      backgroundColor: PALETTE[idx % PALETTE.length],
+      borderColor: PALETTE[idx % PALETTE.length],
+      fill: chartType.toLowerCase().includes('area'),
+    }));
 
-    const regions = [...new Set(rawData.map(d => d.region).filter(Boolean))];
+    const chartDataFromDB = { labels, datasets };
+    // --- END DYNAMIC LOGIC ---
 
-const datasets = regions.map(region => {
-  return {
-    label: region,
-    data: years.map(year => {
-      const match = groupedByYear[year]?.find(r => r.region === region);
-      return match ? Number(match.value) : 0;
-    }),
-  };
-});
-
-const chartDataFromDB = {
-  labels: years.length ? years : ['Unknown'],
-  datasets
-};
     const defaultChartData = {
       labels: ['Admin', 'Agric', 'Industry', 'Trade', 'Finance', 'Education'],
       datasets: [
@@ -393,7 +507,7 @@ const chartDataFromDB = {
     const getChartData = (data) => {
       if (!isValidChartData(data)) {
         return defaultChartData;
-      }
+      };
       return {
         labels: Array.isArray(data.labels) ? data.labels : defaultChartData.labels,
         datasets: Array.isArray(data.datasets) && data.datasets.length ? data.datasets : defaultChartData.datasets
@@ -402,7 +516,7 @@ const chartDataFromDB = {
 
     const singleSeries = (cd) => {
       const normalized = getChartData(cd);
-      return { labels: normalized.labels, datasets: [ { ...normalized.datasets[0] } ] };
+      return { labels: normalized.labels, datasets: [ { ...normalized.datasets[0], data: normalized.datasets[0].data.map(v => Number(v)) } ] };
     };
 
     const scatterData = selectedRows.length ? {
@@ -478,36 +592,36 @@ const chartDataFromDB = {
     switch (chartType) {
       case 'Horizontal Bar':
       case 'Column':
-      case 'Grouped Column':
-        return <Bar data={chartDataFromDB} options={optionsHorizontal} />;
+        return <Bar data={chartDataFromDB} options={chartType === 'Horizontal Bar' ? optionsHorizontal : baseOptions} />;
       case 'Stacked Bar':
       case 'Horizontal Stacked Bar':
         return <Bar data={safeChartData} options={optionsStacked} />;
       case '100% Stacked Bar':
       case 'Stacked100 Area':
         return <Bar data={safeChartData} options={options100Stacked} />;
-      case 'Grouped Bar':
+      case 'Grouped Column':
+      case 'Grouped Bar': // Alias for Grouped Column
         return <Bar data={safeChartData} options={baseOptions} />;
       case 'Mixed (Bar+Line)':
         return <Bar data={mixedData} options={baseOptions} />;
       case 'Line':
-        return <Line data={activeChartData} options={baseOptions} />;
+        return <Line data={chartDataFromDB} options={baseOptions} />;
       case 'Smooth Line':
       case 'Spline':
-        return <Line data={activeChartData} options={{ ...baseOptions, elements: { line: { tension: 0.4 } } }} />;
+        return <Line data={chartDataFromDB} options={{ ...baseOptions, elements: { line: { tension: 0.4 } } }} />;
       case 'Area':
       case 'Stacked Area':
-        return <Line data={activeChartData} options={{ ...baseOptions, elements: { line: { fill: true } }, ...(chartType === 'Stacked Area' ? { stacked: true } : {}) }} />;
+        return <Line data={chartDataFromDB} options={{ ...baseOptions, elements: { line: { fill: true } }, scales: { y: { stacked: chartType === 'Stacked Area' } } }} />;
       case 'Stepped Line':
-        return <Line data={activeChartData} options={{ ...baseOptions, elements: { line: { stepped: true } } }} />;
+        return <Line data={chartDataFromDB} options={{ ...baseOptions, elements: { line: { stepped: true } } }} />;
       case 'Multi-axis Line':
-        return <Line data={{ labels: chartLabels, datasets: [ { label: firstDataset.label || 'Series 1', data: Array.isArray(firstDataset.data) ? firstDataset.data : [], yAxisID: 'y' }, { label: secondDataset.label || 'Series 2', data: Array.isArray(secondDataset.data) ? secondDataset.data : [], yAxisID: 'y1' } ] }} options={optionsMultiAxis} />;
+        return <Line data={mixedData} options={optionsMultiAxis} />;
       case 'Radar':
       case 'Radial (Alias)':
-        return <Radar data={activeChartData} options={baseOptions} />;
+        return <Radar data={chartDataFromDB} options={baseOptions} />;
       case 'PolarArea':
       case 'Polar (Alias)':
-        return <PolarArea data={singleSeries(activeChartData)} options={baseOptions} />;
+        return <PolarArea data={singleSeries(chartDataFromDB)} options={baseOptions} />;
       case 'Treemap':
         return <ReactChart type="treemap" data={treemapData} options={baseOptions} />;
       case 'Sankey':
@@ -515,17 +629,17 @@ const chartDataFromDB = {
       case 'Candlestick':
         return <ReactChart type="candlestick" data={candlestickData} options={baseOptions} />;
       case 'Pie':
-        return <Pie data={singleSeries(activeChartData)} options={baseOptions} />;
+        return <Pie data={singleSeries(chartDataFromDB)} options={baseOptions} />;
       case 'Doughnut':
       case 'Donut (Center)':
-        return <Doughnut data={singleSeries(activeChartData)} options={baseOptions} />;
+        return <Doughnut data={singleSeries(chartDataFromDB)} options={baseOptions} />;
       case 'Scatter (Points)':
-        if (selectedDataset === 'scatter') {
-          return <Line data={scatterData} options={{ ...baseOptions, elements: { line: { showLine: false } } }} />;
-        }
-        if (Array.isArray(activeChartData.labels)) {
-          const pts = activeChartData.labels.map((l, i) => ({ x: i + 1, y: (activeChartData.datasets?.[0]?.data?.[i]) || 0 }));
-          return <Line data={{ datasets: [ { label: 'Points', data: pts } ] }} options={{ ...baseOptions, elements: { line: { showLine: false } } }} />;
+        if (Array.isArray(chartDataFromDB.labels)) {
+          const datasets = chartDataFromDB.datasets.map(ds => ({
+            ...ds,
+            data: ds.data.map((val, i) => ({ x: i, y: val }))
+          }));
+          return <Line data={{ datasets }} options={{ ...baseOptions, elements: { line: { showLine: false } } }} />;
         }
         return <Line data={scatterData} options={{ ...baseOptions, elements: { line: { showLine: false } } }} />;
       case 'Bubble-like':
@@ -537,7 +651,7 @@ const chartDataFromDB = {
       case 'Heatmap (Simulated)':
         return <Bar data={{ labels: chartLabels, datasets: [ { label: 'Heat', data: Array.isArray(firstDataset.data) ? firstDataset.data : [], backgroundColor: ['#fee2e2','#fecaca','#fca5a5','#f87171','#ef4444','#dc2626'] } ] }} options={baseOptions} />;
       default:
-        return <Bar data={activeChartData} options={baseOptions} />;
+        return <Bar data={chartDataFromDB} options={baseOptions} />;
     }
   };
 
@@ -599,23 +713,23 @@ const chartDataFromDB = {
                   style={styles.badgeBlue}
                   onClick={() => {
                     setSelectedYear("");
-                    setSelectedYearDate("");
                   }}
                 >
                   Show All
                 </span>
               </h4>
-                <div style={styles.dateControl}>
-                  <input
-                    type="date"
-                    value={selectedYearDate}
+                <div style={styles.selectWrapper}>
+                  <select
+                    style={styles.select}
+                    value={selectedYear}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      setSelectedYearDate(value);
-                      setSelectedYear(value ? value.split('-')[0] : '');
+                      setSelectedYear(e.target.value);
                     }}
-                    style={styles.dateInput}
-                  />
+                  >
+                    <option value="">All Years</option>
+                    {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                  <FaChevronDown style={styles.selectIcon} />
                 </div>
               </div>
             </div>
@@ -625,7 +739,6 @@ const chartDataFromDB = {
     onClick={() => {
       setSelectedCategory("");
       setSelectedYear("");
-      setSelectedYearDate("");
       setSearchTerm("");
     }}
   >
@@ -689,6 +802,7 @@ onMouseLeave={(e) => {
             <div style={styles.sidebar}>
               <div onClick={() => setActiveTab("Table")} style={activeTab === "Table" ? styles.tabActive : styles.tab}><FaTable size={18} /><span>Table</span></div>
               <div onClick={() => setActiveTab("Chart")} style={activeTab === "Chart" ? styles.tabActive : styles.tab}><FaChartBar size={18} /><span>Chart</span></div>
+              <div onClick={() => setActiveTab("Pivot")} style={activeTab === "Pivot" ? styles.tabActive : styles.tab}><FaGripVertical size={18} /><span>Pivot</span></div>
               <div onClick={() => setActiveTab("Data")} style={activeTab === "Data" ? styles.tabActive : styles.tab}><FaDatabase size={18} /><span>Data</span></div>
             </div>
 
@@ -707,71 +821,45 @@ onMouseLeave={(e) => {
                       <div style={styles.chartControls}>
                         <div style={styles.controlGroup}>
                           <label style={styles.controlLabel}>Chart type</label>
-                          <div style={styles.selectWrapper}>
+                          <div style={{...styles.selectWrapper, flex: 1.5}}>
                             <select style={styles.select} value={chartType} onChange={(e) => setChartType(e.target.value)}>
-                              <option>Bar</option>
-                              <option>Horizontal Bar</option>
-                              <option>Stacked Bar</option>
-                              <option>Grouped Bar</option>
-                              <option>100% Stacked Bar</option>
-                              <option>Mixed (Bar+Line)</option>
-                              <option>Line</option>
                               <option>Smooth Line</option>
+                              <option>Line</option>
                               <option>Area</option>
                               <option>Stacked Area</option>
+                              <option>Column</option>
+                              <option>Horizontal Bar</option>
+                              <option>Stacked Bar</option>
+                              <option>100% Stacked Bar</option>
+                              <option>Grouped Bar</option>
+                              <option>Mixed (Bar+Line)</option>
                               <option>Stepped Line</option>
                               <option>Multi-axis Line</option>
+                              <option>Scatter (Points)</option>
+                              <option>Bubble-like</option>
+                              <option>Combo (Bar+Line+Area)</option>
                               <option>Radar</option>
                               <option>PolarArea</option>
                               <option>Pie</option>
                               <option>Doughnut</option>
-                              <option>Donut (Center)</option>
-                              <option>Scatter (Points)</option>
-                              <option>Bubble-like</option>
-                              <option>Column</option>
-                              <option>Horizontal Stacked Bar</option>
-                              <option>Spline</option>
-                              <option>Combo (Bar+Line+Area)</option>
-                              <option>Mini (Sparkline)</option>
-                              <option>Heatmap (Simulated)</option>
-                              <option>Stacked100 Area</option>
-                              <option>Polar (Alias)</option>
-                              <option>Radial (Alias)</option>
-                              <option>Grouped Column</option>
                             </select>
                             <FaChevronDown style={styles.selectIcon} />
                           </div>
                         </div>
                         <div style={styles.controlGroup}>
-                          <label style={styles.controlLabel}>Dataset</label>
+                          <label style={styles.controlLabel}>View (X-Axis)</label>
                           <div style={styles.selectWrapper}>
-                            <select style={styles.select} value={selectedDataset} onChange={(e) => setSelectedDataset(e.target.value)}>
-                              <option value="chartData">Sectors (chartData)</option>
-                              <option value="scatter">Applications (scatter)</option>
-                              <option value="bubble">Experience (bubble)</option>
-                              <option value="treemap">Treemap (sectors)</option>
-                              <option value="sankey">Sankey (flows)</option>
-                              <option value="candlestick">Candlestick (OHLC)</option>
+                            <select style={styles.select} value={chartXAxis} onChange={e => setChartXAxis(e.target.value)}>
+                              {chartFieldOptions.map(opt => <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>)}
                             </select>
                             <FaChevronDown style={styles.selectIcon} />
                           </div>
                         </div>
                         <div style={styles.controlGroup}>
-                          <label style={styles.controlLabel}>View</label>
+                          <label style={styles.controlLabel}>Plot every value of (Group By)</label>
                           <div style={styles.selectWrapper}>
-                            <select style={styles.select}>
-                              <option>Industry Group (EIN)</option>
-                              <option>Year</option>
-                            </select>
-                            <FaChevronDown style={styles.selectIcon} />
-                          </div>
-                        </div>
-                        <div style={styles.controlGroup}>
-                          <label style={styles.controlLabel}>Plot every value of</label>
-                          <div style={styles.selectWrapper}>
-                            <select style={styles.select}>
-                              <option>Region</option>
-                              <option>Year</option>
+                            <select style={styles.select} value={chartGroupBy} onChange={e => setChartGroupBy(e.target.value)}>
+                              {chartFieldOptions.map(opt => <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>)}
                             </select>
                             <FaChevronDown style={styles.selectIcon} />
                           </div>
@@ -779,7 +867,8 @@ onMouseLeave={(e) => {
                         <div style={styles.controlGroup}>
                           <label style={styles.controlLabel}>For year</label>
                           <div style={styles.selectWrapper}>
-                            <select style={styles.select}>
+                            <select style={styles.select} value={selectedYear} onChange={e => setSelectedYear(e.target.value)}>
+                              <option value="">All Years</option>
                               {(selectedStat ? detailYears : yearOptions).map(y => <option key={y}>{y}</option>)}
                             </select>
                             <FaChevronDown style={styles.selectIcon} />
@@ -790,6 +879,7 @@ onMouseLeave={(e) => {
                     </>
                   )}
                   {activeTab === "Table" && <DetailTable rows={selectedStat?.rows || []} />}
+                  {activeTab === "Pivot" && <PivotTable data={selectedStat?.rows || []} />}
                   {activeTab === "Data" && <DataView dataRows={selectedStat?.rows || []} />}
                </div>
             </div>
@@ -860,7 +950,7 @@ heroOverlay: {
 
   zIndex: 1
 },
-
+ 
 heroInner: {
   maxWidth: "750px",
   position: "relative",
@@ -874,7 +964,7 @@ heroMini: {
   color: "#93c5fd",
   marginBottom: "10px"
 },
-
+ 
 heroTitle: {
   fontSize: "40px",
   fontWeight: "600",
@@ -882,7 +972,7 @@ heroTitle: {
   margin: "10px 0",
   lineHeight: "1.2"
 },
-
+ 
 heroSub: {
   fontSize: "15px",
   color: "rgba(255,255,255,0.85)",
@@ -924,7 +1014,7 @@ pubCardYellow: {
   transition: 'all 0.3s ease',
   boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
 },
-
+ 
 pubCardGreen: {
   background: 'rgba(240, 253, 244, 0.6)',
   border: '1px solid rgba(74, 222, 128, 0.6)',
@@ -971,18 +1061,39 @@ pubCardGreen: {
   rowOdd: { backgroundColor: '#fbfdff' },
   rowHover: { transition: 'background-color 150ms ease', cursor: 'default' },
   pivotWrapper: { marginTop: '10px' },
-  pivotControls: { display: 'flex', gap: '15px', marginBottom: '20px' },
-  pivotBox: { flex: 1, backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' },
-  pivotBoxLabel: { fontSize: '11px', fontWeight: 'bold', color: '#103063', marginBottom: '8px', textTransform: 'uppercase' },
-  dashedContainer: { minHeight: '40px', border: '1px dashed #cbd5e1', borderRadius: '4px', display: 'flex', alignItems: 'center', padding: '0 10px', gap: '10px' },
-  pivotTag: { backgroundColor: '#00AEEF', color: '#fff', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center' },
-  tableScrollWrapper: { overflowX: 'auto', marginTop: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-  pivotHeaderCellMain: { backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' },
-  pivotHeaderYear: { backgroundColor: '#103063', color: '#fff', padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: 'bold' },
-  tableCellSubHeader: { padding: '10px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'center', fontSize: '12px', minWidth: '100px' },
-  tableCellRegion: { padding: '12px', border: '1px solid #e2e8f0', fontWeight: 'bold', color: '#103063', backgroundColor: '#fff' },
-  tableCellData: { padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#64748b' },
+  pivotControlsV2: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '16px',
+    marginBottom: '24px',
+    padding: '20px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    alignItems: 'flex-end',
+  },
+  pivotExportContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    paddingBottom: '2px', // Align with other inputs
+  },
+  exportBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, border: '1px solid #10b981', background: '#ecfdf5', color: '#065f46', cursor: 'pointer', fontWeight: 700,
+  },
+  pivotControlGroup: { display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 },
+  pivotSelect: { width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px', backgroundColor: '#fff', appearance: 'none', cursor: 'pointer' },
+  pivotBoxLabel: { fontSize: '11px', fontWeight: 'bold', color: '#103063', textTransform: 'uppercase' },
+  tableScrollWrapper: { overflowX: 'auto', marginTop: '20px', borderRadius: '14px', border: '1px solid #e2e8f0' },
+  table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px' },
+  pivotHeaderCellMain: { position: 'sticky', left: 0, zIndex: 2, backgroundColor: '#ffffff', padding: '14px 16px', borderBottom: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', fontWeight: 700, color: '#0f172a' },
+  tableCellSubHeader: { padding: '14px 16px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', color: '#475569', textAlign: 'center', fontSize: '12px', minWidth: '110px', fontWeight: 600 },
+  tableCellRegion: { position: 'sticky', left: 0, zIndex: 1, padding: '14px 16px', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #e2e8f0', fontWeight: 600, color: '#1e3a8a', backgroundColor: '#f8fafc' },
+  tableCellData: { padding: '14px 16px', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9', textAlign: 'center', color: '#475569' },
+  totalRow: { backgroundColor: '#f0f9ff', fontWeight: 'bold' },
+  totalCellHeader: { position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#f0f9ff', color: '#0c4a6e', fontWeight: 700, padding: '14px 16px', borderRight: '1px solid #e2e8f0' },
+  totalCell: { color: '#0c4a6e', fontWeight: 700, padding: '14px 16px', borderRight: '1px solid #e2e8f0', textAlign: 'center' },
+  grandTotalCell: { backgroundColor: '#dbeafe', color: '#4338ca', fontWeight: 800, fontSize: '14px', padding: '14px 16px', textAlign: 'center' },
 
   // --- MODAL STYLES ---
   modalOverlay: {
@@ -1031,29 +1142,29 @@ heroOverlay: {
   background: "transparent",
   zIndex: 1,
 },
-
+ 
 heroInner: {
   maxWidth: "900px",
 },
-
+ 
 heroMini: {
   fontSize: "13px",
   color: "#7dd3fc",
   marginBottom: "10px",
 },
-
+ 
 heroTitle: {
   fontSize: "40px",
   fontWeight: "bold",
   marginBottom: "10px",
 },
-
+ 
 heroSub: {
   fontSize: "15px",
   color: "rgba(255,255,255,0.75)",
   maxWidth: "700px",
 },
-
+ 
 pageWrapper: {
   display: "flex",
   flexDirection: "column",
@@ -1062,7 +1173,7 @@ pageWrapper: {
   backgroundColor: "#ffffff",
   position: "relative",
 },
-
+ 
 badgeGreen: {
   backgroundColor: '#4ade80',
   color: '#fff',
@@ -1072,7 +1183,7 @@ badgeGreen: {
   marginLeft: '8px',
   cursor: 'pointer'
 },
-
+ 
 badgeBlue: {
   backgroundColor: '#3b82f6',
   color: '#fff',
@@ -1091,7 +1202,7 @@ globalOverlay: {
   background: "rgba(0,0,0,0.45)",
   zIndex: 0,
 },
-
+ 
 clearFilterWrapper: {
   display: 'flex',
   justifyContent: 'flex-end',

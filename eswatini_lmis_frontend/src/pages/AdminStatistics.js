@@ -19,8 +19,7 @@ import {
   FaTable,
   FaEdit
 } from 'react-icons/fa';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://elmiseswatini-backend.onrender.com/api';
+import { API_ENDPOINT } from '../services/api';
 export const ESWATINI_REGIONS = ['Hhohho', 'Manzini', 'Shiselweni', 'Lubombo'];
 
 const authHeader = () => {
@@ -336,7 +335,7 @@ export default function AdminStatistics() {
   const loadUploadedFiles = useCallback(async () => {
     setLoadingFiles(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/statistics-uploads-list`);
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics-uploads-list`);
       if (!res.ok) throw new Error(`Server ${res.status}`);
       const data = await res.json();
       setUploadedFiles(Array.isArray(data)
@@ -358,7 +357,7 @@ export default function AdminStatistics() {
   const loadRawStats = useCallback(async () => {
     setLoadingRaw(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/statistics`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics`, {
         headers: { ...authHeader() }
       });
       if (!res.ok) throw new Error(`Server ${res.status}`);
@@ -395,7 +394,7 @@ export default function AdminStatistics() {
     setUploadError('');
     setUploadStatus('parsing');
     try {
-      const res = await fetch(`${API_BASE}/admin/statistics-uploads/${upload.id}`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics-uploads/${upload.id}`, {
         headers: { ...authHeader() }
       });
       if (!res.ok) {
@@ -500,7 +499,7 @@ export default function AdminStatistics() {
       fileData.append('category', resourceCategory || 'Statistics');
       fileData.append('year', resourceYear || parsed.rows[0]?.year || '');
 
-      const saveRes = await fetch(`${API_BASE}/admin/statistics-file`, {
+      const saveRes = await fetch(`${API_ENDPOINT}/admin/statistics-file`, {
         method: 'POST',
         headers: { ...authHeader() },
         body: fileData
@@ -548,13 +547,13 @@ export default function AdminStatistics() {
     try {
       let res;
       if (uploadedFileId) {
-        res = await fetch(`${API_BASE}/admin/statistics-uploads/${uploadedFileId}/process`, {
+        res = await fetch(`${API_ENDPOINT}/admin/statistics-uploads/${uploadedFileId}/process`, {
           method: 'POST',
           headers: { ...authHeader() }
         });
       } else {
         const payload = { data: normalizedRows };
-        res = await fetch(`${API_BASE}/admin/statistics`, {
+        res = await fetch(`${API_ENDPOINT}/admin/statistics`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeader() },
           body: JSON.stringify(payload)
@@ -595,7 +594,7 @@ export default function AdminStatistics() {
       if (!rows.length) throw new Error('No valid rows found.');
       const payload = { data: rows };
       if (uploadedFileId) payload.upload_id = uploadedFileId;
-      const res = await fetch(`${API_BASE}/admin/statistics`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(payload)
@@ -634,7 +633,7 @@ export default function AdminStatistics() {
       }
       const payload = { data: [row] };
       if (uploadedFileId) payload.upload_id = uploadedFileId;
-      const res = await fetch(`${API_BASE}/admin/statistics`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(payload)
@@ -657,7 +656,7 @@ export default function AdminStatistics() {
     if (!window.confirm('Delete this row?')) return;
     setDeleteLoading(id);
     try {
-      const res = await fetch(`${API_BASE}/admin/statistics/${id}`, {
+      const res = await fetch(`${API_ENDPOINT}/admin/statistics/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...authHeader() }
       });
