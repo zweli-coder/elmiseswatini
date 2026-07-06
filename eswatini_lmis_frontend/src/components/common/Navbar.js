@@ -47,11 +47,6 @@ const Navbar = ({ onToggleSidebar, sidebarOpen }) => {
     icon: <PublicationsIcon />
   },
   {
-    path: '/resources',
-    label: 'Resources',
-    icon: <PublicationsIcon />
-  },
-  {
     path: '/vacancies',
     label: 'Vacancies',
     icon: <VacancyIcon />
