@@ -4,6 +4,7 @@ import {
   RouterProvider,
   Outlet,
   useLocation,
+  Navigate,
 } from 'react-router-dom';
 
 // ── layout ────────────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ const router = createBrowserRouter(
         { path: 'vacancies',                         element: <Vacancies /> },
         { path: 'jobseekers',                        element: <JobSeekers /> },
         { path: 'publications',                      element: <Publications /> },
+        { path: 'resources',                         element: <Navigate to="/publications" replace /> },
         { path: 'api-docs',                          element: <APIDocumentation /> },
         { path: 'career-advice',                     element: <CareerAdvice /> },
         { path: 'career-advice/growing-your-career', element: <CareerAdvice /> },
