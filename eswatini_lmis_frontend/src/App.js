@@ -21,7 +21,6 @@ import SectorDetail          from './pages/SectorDetail';
 import Vacancies             from './pages/Vacancies';
 import JobSeekers            from './pages/JobSeekers';
 import Publications          from './pages/Publications';
-import Resources             from './pages/Resources';
 import APIDocumentation      from './pages/APIDocumentation';
 import AdminPublications     from './pages/AdminPublications';
 import AdminPublicationsManage from './pages/AdminPublicationsManage';
@@ -88,7 +87,6 @@ const router = createBrowserRouter(
         { path: 'vacancies',                         element: <Vacancies /> },
         { path: 'jobseekers',                        element: <JobSeekers /> },
         { path: 'publications',                      element: <Publications /> },
-        { path: 'resources',                         element: <Resources /> },
         { path: 'api-docs',                          element: <APIDocumentation /> },
         { path: 'career-advice',                     element: <CareerAdvice /> },
         { path: 'career-advice/growing-your-career', element: <CareerAdvice /> },
