@@ -116,6 +116,7 @@ const router = createBrowserRouter(
     }
   ],
   {
+    basename: process.env.PUBLIC_URL,
     future: { v7_startTransition: true }
   }
 );
