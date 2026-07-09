@@ -1,0 +1,33 @@
+{
+  "files": {
+    "main.css": "/elmiseswatini/static/css/main.46748e58.css",
+    "main.js": "/elmiseswatini/static/js/main.81d3deec.js",
+    "static/media/hero.jpg": "/elmiseswatini/static/media/hero.0710d2579d9630e885a1.jpg",
+    "static/media/mining.jpg": "/elmiseswatini/static/media/mining.0afed5464d6e84f10f3b.jpg",
+    "static/media/tourism.jpg": "/elmiseswatini/static/media/tourism.09bd0e4724dd97df328d.jpg",
+    "static/media/manufacturing.jpg": "/elmiseswatini/static/media/manufacturing.cd9568572e33f7363528.jpg",
+    "static/media/construction.jpg": "/elmiseswatini/static/media/construction.2cd37e0810bdb5e7567d.jpg",
+    "static/media/agriculture.jpg": "/elmiseswatini/static/media/agriculture.215c1836a84cf3f9afd1.jpg",
+    "static/media/advice.jpg": "/elmiseswatini/static/media/advice.b41313c2b56ab46d4b5e.jpg",
+    "static/media/seeker.jpg": "/elmiseswatini/static/media/seeker.b0577d9f794e52ac0501.jpg",
+    "static/media/default.jpg": "/elmiseswatini/static/media/default.c13a133004cdc54fd586.jpg",
+    "static/media/publications.jpg": "/elmiseswatini/static/media/publications.f9347727b426a25808f9.jpg",
+    "static/media/vacanyy.jpg": "/elmiseswatini/static/media/vacanyy.33035d5333dbb5b0ee63.jpg",
+    "static/media/ict.jpg": "/elmiseswatini/static/media/ict.2fc112a0b0281cbdcf30.jpg",
+    "static/media/transport.jpg": "/elmiseswatini/static/media/transport.a60db187db07678f0182.jpg",
+    "static/media/stats.png": "/elmiseswatini/static/media/stats.ce4e713bf1c1807f8dbe.png",
+    "static/media/health.jpg": "/elmiseswatini/static/media/health.8ba6a75f0401f6c9336e.jpg",
+    "static/media/jobs.jpg": "/elmiseswatini/static/media/jobs.91de4eabe56b3922b6ec.jpg",
+    "static/media/industry.jpg": "/elmiseswatini/static/media/industry.89275b6d3fceb598880b.jpg",
+    "static/media/education.jpg": "/elmiseswatini/static/media/education.2f59d168392e39b7a55e.jpg",
+    "static/media/Sibebe.png": "/elmiseswatini/static/media/Sibebe.bf2e86c0eca5a1af3228.png",
+    "static/media/plane.png": "/elmiseswatini/static/media/plane.849f68651793d7ba451a.png",
+    "index.html": "/elmiseswatini/index.html",
+    "main.46748e58.css.map": "/elmiseswatini/static/css/main.46748e58.css.map",
+    "main.81d3deec.js.map": "/elmiseswatini/static/js/main.81d3deec.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.46748e58.css",
+    "static/js/main.81d3deec.js"
+  ]
+}
