@@ -9,8 +9,11 @@ build/
 dist/
 .DS_Store
 .vscode/
+.vs/
 *.swp
 *.swo
 uploads/
 db_data/
 .git/
+elmiseswatini/
+lmis-eswatini-app/
