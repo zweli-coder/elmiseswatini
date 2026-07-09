@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import {
-  createBrowserRouter,
+  createHashRouter,
   RouterProvider,
   Outlet,
   useLocation,
@@ -72,7 +72,7 @@ useEffect(() => {
   );
 };
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   [
     {
       path: '/',
