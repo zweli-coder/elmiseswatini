@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'eswatini_lmis_frontend/**'
-      - '.github/workflows/deploy-pages.yml'
 
 jobs:
   build-and-deploy:
@@ -22,10 +19,12 @@ jobs:
 
       - name: Install dependencies
         working-directory: eswatini_lmis_frontend
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build
         working-directory: eswatini_lmis_frontend
+        env:
+          CI: false
         run: npm run build
 
       - name: Deploy to GitHub Pages
@@ -33,4 +32,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: eswatini_lmis_frontend/build
-          cname: elmis.eswatini.local
+          force_orphan: true
