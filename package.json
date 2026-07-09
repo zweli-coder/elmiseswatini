@@ -2,5 +2,8 @@
   "name": "lmis-eswatini",
   "version": "1.0.0",
   "description": "Labor Market Information System for Eswatini",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "eslint": "^10.6.0"
+  }
 }

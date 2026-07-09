@@ -1,4 +1,4 @@
-// ===============================
+﻿// ===============================
 // VACANCIES.JS - COMPLETE VERSION
 // ===============================
 
@@ -16,7 +16,8 @@ import {
   FaBuilding,
   FaClock,
   FaChevronRight,
-  FaSpinner
+  FaSpinner,
+  FaExclamationTriangle
 } from "react-icons/fa";
 
 // Using centralized API_ENDPOINT from services/api
@@ -35,6 +36,7 @@ export default function Vacancies() {
   const [selectedRegion, setSelectedRegion] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [modalMode, setModalMode] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
@@ -111,29 +113,52 @@ export default function Vacancies() {
     const fetchJobs = async () => {
 
       setLoading(true);
+      setError(null);
 
       try {
 
-        let res;
+        console.log('🔍 Fetching jobs from:', `${API_ENDPOINT}/jobs`);
 
-        try {
-          res = await fetch(`${API_ENDPOINT}/jobs`);
-        } catch {
-          res = await fetch(`${API_ENDPOINT}/jobs`);
-        }
+        const res = await fetch(`${API_ENDPOINT}/jobs`);
+
+        console.log('📡 Response status:', res.status);
 
         if (res.ok) {
 
           const data = await res.json();
 
-          setAllJobs(Array.isArray(data) ? data : []);
-          setFilteredJobs(Array.isArray(data) ? data : []);
+          console.log('✅ Jobs loaded:', data.length, 'jobs');
 
+          if (!Array.isArray(data)) {
+            console.warn('⚠️ Response is not an array:', data);
+            setAllJobs([]);
+            setFilteredJobs([]);
+            setError('Invalid data format received from server');
+            return;
+          }
+
+          if (data.length === 0) {
+            console.warn('⚠️ No jobs found in database');
+            setError('No vacancies available at the moment');
+          }
+
+          setAllJobs(data);
+          setFilteredJobs(data);
+
+        } else {
+          const errorText = await res.text();
+          console.error('❌ Failed to fetch jobs:', res.status, errorText);
+          setError(`Failed to load vacancies (Error ${res.status})`);
+          setAllJobs([]);
+          setFilteredJobs([]);
         }
 
       } catch (err) {
 
-        console.error("Jobs fetch error:", err);
+        console.error("❌ Jobs fetch error:", err);
+        setError(`Unable to connect to server: ${err.message}`);
+        setAllJobs([]);
+        setFilteredJobs([]);
 
       } finally {
 

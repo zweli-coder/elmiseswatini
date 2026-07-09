@@ -1,8 +1,7 @@
-// JobSeekers.js
 import React, { useEffect, useState, useCallback } from 'react';
 import heroImage from "../assets/seeker.jpg";
 import API from '../services/api';
-import { 
+import {
   FaUserAlt, FaBriefcase, FaPlus, FaEnvelope, FaSpinner,
   FaTimes, FaSearch, FaCalendarAlt
 } from 'react-icons/fa';
@@ -15,7 +14,7 @@ const JobSeekers = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   const [selectedRegion, setSelectedRegion] = useState('All');
   const [selectedSector, setSelectedSector] = useState('All');
   const [selectedYear, setSelectedYear] = useState('');
@@ -96,7 +95,7 @@ const JobSeekers = () => {
   useEffect(() => {
     let result = [...seekers];
     if (selectedRegion !== 'All') result = result.filter(s => s.region === selectedRegion);
-    if (selectedSector !== 'All') result = result.filter(s => s.sector === selectedSector);
+    if (selectedSector !== 'All' && selectedSector !== 'All Sectors') result = result.filter(s => s.sector === selectedSector);
     if (selectedYear) {
       result = result.filter((s) => {
         const year = s.created_at ? new Date(s.created_at).getFullYear() : null;
@@ -105,7 +104,7 @@ const JobSeekers = () => {
     }
     if (searchName.trim()) {
       const query = searchName.toLowerCase();
-      result = result.filter(s => 
+      result = result.filter(s =>
         (s.fullname?.toLowerCase() || '').includes(query) ||
         (s.sector?.toLowerCase()    || '').includes(query)
       );
@@ -132,7 +131,7 @@ const JobSeekers = () => {
       }
 
       setSuccessMessage('Creating your job seeker profile...');
-      
+
       // Use the centralized API service for consistent backend handling.
       const profileResponse = await API.post('/employees', {
         full_name:         formData.full_name,
@@ -159,7 +158,7 @@ const JobSeekers = () => {
 
       setSuccessMessage('You have registered successfully.');
       setShowModal(false);
-      setFormData({ 
+      setFormData({
         full_name: '',
         email: '',
         national_id: '',
@@ -323,6 +322,19 @@ const JobSeekers = () => {
                   <div style={styles.cardMeta}>
                     <h3 style={styles.seekerName}>{s.fullname}</h3>
                     <div style={styles.regionTag}>{s.region || 'Region not specified'}</div>
+                  </div>
+                <div style={styles.cardHeader}>
+                      <div style={styles.profileImageContainer}>
+                          {s.profile_picture ? (
+                              <img src={s.profile_picture} alt={s.fullname} style={styles.profileImage} />
+                          ) : (
+                              <div style={styles.avatarIcon}><FaUserAlt color="#fff" /></div>
+                          )}
+                      </div>
+                      <div style={styles.cardMeta}>
+                          <h3 style={styles.seekerName}>{s.fullname}</h3>
+                          <div style={styles.regionTag}>{s.region || 'Region not specified'}</div>
+                      </div>
                   </div>
                 </div>
                 <p style={styles.sectorText} title={s.sector}>
@@ -509,21 +521,21 @@ subHero: {
   resultsCount:         { marginBottom: '20px', color: '#64748b', fontSize: '14px' },
   cardGrid:             { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' },
   seekerCard:           { background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)', padding: '28px', borderRadius: '20px', boxShadow: '0 4px 6px rgba(16, 48, 99, 0.08), 0 2px 4px rgba(16, 48, 99, 0.04)', border: '2px solid #b3d9f5', display: 'flex', flexDirection: 'column', transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer', position: 'relative', overflow: 'hidden' },
-  
+
   seekerCardHover:      { transform: 'translateY(-6px) scale(1.01)', boxShadow: '0 16px 24px rgba(16, 48, 99, 0.15), 0 8px 12px rgba(16, 48, 99, 0.08)', borderColor: '#00AEEF' },
-  
+
   cardTop:              { display: 'flex', gap: '16px', marginBottom: '18px', alignItems: 'flex-start' },
-  
+
   profileImageContainer: { width: '62px', height: '62px', borderRadius: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #00AEEF, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)', transition: 'all 0.3s ease' },
-  
+
   profileImage:         { width: '100%', height: '100%', objectFit: 'cover' },
-  
+
   avatarIcon:           { fontSize: '28px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  
+
   cardMeta:             { display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 },
-  
+
   seekerName:           { margin: 0, fontSize: '20px', fontWeight: 700, color: '#103063', lineHeight: 1.3, transition: 'color 0.3s ease' },
-  
+
   cardHeader:           { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
   avatar:               { width: '45px', height: '45px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   regionTag:            { alignSelf: 'flex-start', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, color: '#065f46', border: '1px solid #86efac', transition: 'all 0.2s ease' },
@@ -533,7 +545,7 @@ subHero: {
   description:          { fontSize: '14px', lineHeight: '1.6', color: '#334155', minHeight: '65px', fontWeight: 500 },
   cardFooter:           { marginTop: 'auto', borderTop: '2px solid #cbd5e1', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' },
   contactBtn:           { flex: 1, padding: '11px 16px', border: 'none', background: 'linear-gradient(135deg, #103063, #134074)', color: '#fff', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(16, 48, 99, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
-  
+
   contactBtnHover:      { transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(16, 48, 99, 0.35)' },
   loadingContainer:     { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', gridColumn: '1/-1' },
   spinner:              { fontSize: '40px', color: '#103063', animation: 'spin 1s linear infinite' },
@@ -564,13 +576,13 @@ subHero: {
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  
+
   .job-seeker-card:hover {
     transform: translateY(-6px) scale(1.01);
     box-shadow: 0 16px 24px rgba(16, 48, 99, 0.15), 0 8px 12px rgba(16, 48, 99, 0.08);
     border-color: #00AEEF;
   }
-  
+
   .job-seeker-card:hover::before {
     opacity: 1;
   }
