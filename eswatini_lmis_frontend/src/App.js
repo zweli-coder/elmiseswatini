@@ -114,6 +114,7 @@ const router = createHashRouter(
     }
   ],
   {
+    basename: process.env.PUBLIC_URL,
     future: { v7_startTransition: true }
   }
 );
