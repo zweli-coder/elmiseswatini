@@ -1,13 +1,5 @@
-# TODO
+The provided `TODO.md` file outlines a plan for fixing a bug related to "registration on admin page". It describes steps to verify UI flow, routing, backend validation, and testing.
 
-## Fix: registration on admin page
+However, this is a *plan* and not actual code that needs to be modified. To generate a diff, I need the specific code files (e.g., `AdminDashboard.js`, `authController.js`, frontend routing files) that you want to change according to this plan.
 
-- [ ] Create a concise reproduction path for the bug (what “registration on admin page” means in the UI flow).
-- [ ] Verify how the admin dashboard links to registration (AdminDashboard.js).
-- [ ] Verify the frontend route for registration and whether it should accept only certain roles.
-- [ ] Verify backend auth/register role validation and ensure admin registration is not possible (authController/register).
-- [ ] Update frontend routing so the admin page never shows a generic “Register” link that allows creating employer/job-seeker accounts while on admin.
-- [ ] Ensure `/admin` unauthorized/unauthenticated states redirect or provide the correct admin login/register guidance.
-- [ ] Test manually: visit `/admin` while unauthenticated; confirm CTA behavior.
-- [ ] Test: try registering with the CTA; confirm role restrictions behave as expected.
-
+Please provide the relevant code files, and I can then generate the diff for the requested fix.

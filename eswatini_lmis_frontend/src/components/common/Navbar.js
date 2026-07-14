@@ -70,7 +70,8 @@ const Navbar = ({ onToggleSidebar, sidebarOpen }) => {
 ];
 
   const navigate = useNavigate();
-  const normalizedPath = location.pathname.toLowerCase();
+  const pathFromHash = (location.hash || '').replace(/^#/, '');
+  const normalizedPath = (pathFromHash || location.pathname || '').toLowerCase();
   const isAuthPage = normalizedPath === '/login' || normalizedPath === '/admin/login' || normalizedPath.startsWith('/register');
 
   useEffect(() => {
@@ -165,7 +166,7 @@ const Navbar = ({ onToggleSidebar, sidebarOpen }) => {
         {navLinks.map(({ path, label, icon }) => {
 
           const active =
-            location.pathname === path;
+            normalizedPath === path;
 
           return (
 
